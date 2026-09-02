@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "netlas-asset-cli"
-version = "0.1.0"
+version = "0.2.0"
 description = "A small, dependency-free CLI for authorized asset lookups with the Netlas API"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -27,6 +27,8 @@ netlas-asset = "netlas_asset_cli.cli:main"
 
 [project.urls]
 Documentation = "https://docs.netlas.io/api-reference/"
+Repository = "https://github.com/thufo/netlas-asset-cli"
+Issues = "https://github.com/thufo/netlas-asset-cli/issues"
 
 [tool.setuptools]
 package-dir = { "" = "src" }

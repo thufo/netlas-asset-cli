@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import json
+import math
+import time
 from typing import Any, Callable, Dict, List
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
 from urllib.request import Request, urlopen
+
+from . import __version__
 
 
 class NetlasError(RuntimeError):
@@ -22,14 +26,37 @@ class NetlasClient:
         *,
         base_url: str = "https://app.netlas.io",
         timeout: float = 30.0,
+        max_retries: int = 2,
+        retry_backoff: float = 0.5,
         opener: Callable[..., Any] = urlopen,
+        sleeper: Callable[[float], None] = time.sleep,
     ) -> None:
         if not api_key or not api_key.strip():
             raise ValueError("A Netlas API key is required")
+        if max_retries < 0:
+            raise ValueError("max_retries cannot be negative")
+        if retry_backoff < 0:
+            raise ValueError("retry_backoff cannot be negative")
         self.api_key = api_key.strip()
         self.base_url = base_url.rstrip("/")
         self.timeout = timeout
+        self.max_retries = max_retries
+        self.retry_backoff = retry_backoff
         self._opener = opener
+        self._sleeper = sleeper
+
+    def _retry_delay(self, error: HTTPError, attempt: int) -> float:
+        """Return a bounded delay, preferring a numeric Retry-After header."""
+
+        retry_after = error.headers.get("Retry-After") if error.headers else None
+        if retry_after is not None:
+            try:
+                delay = float(retry_after)
+                if math.isfinite(delay):
+                    return min(max(delay, 0.0), 60.0)
+            except ValueError:
+                pass
+        return min(self.retry_backoff * (2**attempt), 30.0)
 
     def _get(self, path: str, params: Dict[str, Any] | None = None) -> Any:
         query = urlencode(params or {}, doseq=True)
@@ -42,26 +69,35 @@ class NetlasClient:
             headers={
                 "Accept": "application/json",
                 "Authorization": f"Bearer {self.api_key}",
-                "User-Agent": "netlas-asset-cli/0.1.0",
+                "User-Agent": f"netlas-asset-cli/{__version__}",
             },
             method="GET",
         )
 
-        try:
-            with self._opener(request, timeout=self.timeout) as response:
-                raw = response.read()
-        except HTTPError as exc:
-            detail = ""
+        attempt = 0
+        while True:
             try:
-                detail = exc.read().decode("utf-8", errors="replace").strip()
-            except Exception:
-                pass
-            suffix = f": {detail[:300]}" if detail else ""
-            raise NetlasError(f"Netlas returned HTTP {exc.code}{suffix}") from exc
-        except URLError as exc:
-            raise NetlasError(f"Could not reach Netlas: {exc.reason}") from exc
-        except TimeoutError as exc:
-            raise NetlasError("The Netlas request timed out") from exc
+                with self._opener(request, timeout=self.timeout) as response:
+                    raw = response.read()
+                break
+            except HTTPError as exc:
+                retryable = exc.code == 429 or 500 <= exc.code <= 599
+                if retryable and attempt < self.max_retries:
+                    self._sleeper(self._retry_delay(exc, attempt))
+                    attempt += 1
+                    continue
+
+                detail = ""
+                try:
+                    detail = exc.read().decode("utf-8", errors="replace").strip()
+                except Exception:
+                    pass
+                suffix = f": {detail[:300]}" if detail else ""
+                raise NetlasError(f"Netlas returned HTTP {exc.code}{suffix}") from exc
+            except URLError as exc:
+                raise NetlasError(f"Could not reach Netlas: {exc.reason}") from exc
+            except TimeoutError as exc:
+                raise NetlasError("The Netlas request timed out") from exc
 
         try:
             return json.loads(raw.decode("utf-8"))

@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from . import __version__
 from .client import NetlasClient, NetlasError
 from .output import render
 
@@ -37,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="netlas-asset",
         description="Focused, authorized asset lookups using the official Netlas API.",
     )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     host = subparsers.add_parser("host", help="get an aggregated IP or domain summary")

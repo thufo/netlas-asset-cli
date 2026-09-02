@@ -6,6 +6,7 @@ authorized external asset discovery. It uses the official Netlas API to:
 - retrieve an aggregated summary for an IP address or domain;
 - search public internet-scan response data with Netlas query syntax;
 - export results as JSON, JSON Lines, or CSV for further analysis.
+- retry temporary API rate limits and service errors with bounded backoff.
 
 The project is intentionally compact so it can be reviewed, extended, and
 integrated into defensive security workflows.
@@ -65,10 +66,14 @@ argument:
 netlas-asset search 'host:example.com' --limit 20
 netlas-asset search 'geo.country:US AND port:443' --limit 40 --format jsonl
 netlas-asset search 'http.title.keyword:"Example Domain"' --format csv --output results.csv
+netlas-asset --version
 ```
 
 The default result limit is 20 and the local safety cap is 200. This keeps the
 tool suitable for focused research and free/community API plans.
+
+Temporary HTTP `429` and `5xx` responses are retried twice. The client honors a
+numeric `Retry-After` header and otherwise uses a short exponential backoff.
 
 ## Commands
 
