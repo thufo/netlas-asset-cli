@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import ipaddress
+import math
 import os
 import re
 import sys
@@ -19,6 +20,20 @@ DOMAIN_RE = re.compile(
     r"^(?=.{1,253}\.?$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.?$",
     re.IGNORECASE,
 )
+
+
+def positive_float(value: str) -> float:
+    number = float(value)
+    if not math.isfinite(number) or number <= 0:
+        raise argparse.ArgumentTypeError("value must be a finite number greater than zero")
+    return number
+
+
+def non_negative_int(value: str) -> int:
+    number = int(value)
+    if number < 0:
+        raise argparse.ArgumentTypeError("value cannot be negative")
+    return number
 
 
 def valid_target(value: str) -> str:
@@ -43,14 +58,33 @@ def build_parser() -> argparse.ArgumentParser:
 
     host = subparsers.add_parser("host", help="get an aggregated IP or domain summary")
     host.add_argument("target", type=valid_target)
+    _add_request_arguments(host)
     _add_output_arguments(host)
 
     search = subparsers.add_parser("search", help="search Netlas public response data")
     search.add_argument("query", help="Netlas/Lucene query, quoted as one shell argument")
     search.add_argument("--limit", type=int, default=20, choices=range(1, 201), metavar="1..200")
+    _add_request_arguments(search)
     _add_output_arguments(search)
 
     return parser
+
+
+def _add_request_arguments(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--timeout",
+        type=positive_float,
+        default=30.0,
+        metavar="SECONDS",
+        help="request timeout in seconds (default: 30)",
+    )
+    parser.add_argument(
+        "--retries",
+        type=non_negative_int,
+        default=2,
+        metavar="COUNT",
+        help="retries for temporary API errors (default: 2)",
+    )
 
 
 def _add_output_arguments(parser: argparse.ArgumentParser) -> None:
@@ -77,6 +111,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     client = NetlasClient(
         api_key,
         base_url=os.environ.get("NETLAS_BASE_URL", "https://app.netlas.io"),
+        timeout=args.timeout,
+        max_retries=args.retries,
     )
 
     try:

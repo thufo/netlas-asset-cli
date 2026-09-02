@@ -66,6 +66,7 @@ argument:
 netlas-asset search 'host:example.com' --limit 20
 netlas-asset search 'geo.country:US AND port:443' --limit 40 --format jsonl
 netlas-asset search 'http.title.keyword:"Example Domain"' --format csv --output results.csv
+netlas-asset host example.com --timeout 10 --retries 1
 netlas-asset --version
 ```
 
@@ -79,8 +80,8 @@ exponential backoff.
 ## Commands
 
 ```text
-netlas-asset host TARGET [--format json|jsonl|csv] [--output PATH]
-netlas-asset search QUERY [--limit 1..200] [--format json|jsonl|csv] [--output PATH]
+netlas-asset host TARGET [--timeout SECONDS] [--retries COUNT] [--format json|jsonl|csv] [--output PATH]
+netlas-asset search QUERY [--limit 1..200] [--timeout SECONDS] [--retries COUNT] [--format json|jsonl|csv] [--output PATH]
 ```
 
 Set `NETLAS_BASE_URL` only when testing against a compatible API endpoint. The

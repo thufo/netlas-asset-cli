@@ -95,7 +95,9 @@ class NetlasClient:
             except HTTPError as exc:
                 retryable = exc.code == 429 or 500 <= exc.code <= 599
                 if retryable and attempt < self.max_retries:
-                    self._sleeper(self._retry_delay(exc, attempt))
+                    delay = self._retry_delay(exc, attempt)
+                    exc.close()
+                    self._sleeper(delay)
                     attempt += 1
                     continue
 
@@ -104,6 +106,8 @@ class NetlasClient:
                     detail = exc.read().decode("utf-8", errors="replace").strip()
                 except Exception:
                     pass
+                finally:
+                    exc.close()
                 suffix = f": {detail[:300]}" if detail else ""
                 raise NetlasError(f"Netlas returned HTTP {exc.code}{suffix}") from exc
             except URLError as exc:

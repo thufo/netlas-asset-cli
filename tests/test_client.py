@@ -88,8 +88,9 @@ class NetlasClientTests(unittest.TestCase):
             client.search_responses("port:443", limit=201)
 
     def test_retries_rate_limit_and_honors_retry_after(self):
+        rate_limit_error = http_error(429, retry_after=2)
         opener = RecordingOpener(
-            [http_error(429, retry_after=2), {"type": "domain", "domain": "example.com"}]
+            [rate_limit_error, {"type": "domain", "domain": "example.com"}]
         )
         sleeps = []
         client = NetlasClient("secret", opener=opener, sleeper=sleeps.append)
@@ -99,6 +100,7 @@ class NetlasClientTests(unittest.TestCase):
         self.assertEqual(result["domain"], "example.com")
         self.assertEqual(len(opener.requests), 2)
         self.assertEqual(sleeps, [2.0])
+        self.assertTrue(rate_limit_error.fp is None or rate_limit_error.fp.closed)
 
     def test_does_not_retry_authentication_error(self):
         opener = RecordingOpener([http_error(401, body=b'invalid token')])
