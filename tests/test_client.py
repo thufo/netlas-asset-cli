@@ -1,6 +1,7 @@
 import io
 import json
 import unittest
+from datetime import datetime, timezone
 from email.message import Message
 from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlsplit
@@ -124,6 +125,24 @@ class NetlasClientTests(unittest.TestCase):
 
         self.assertEqual(len(opener.requests), 3)
         self.assertEqual(sleeps, [0.25, 0.5])
+
+    def test_honors_http_date_retry_after(self):
+        retry_at = "Thu, 03 Sep 2026 01:30:00 GMT"
+        now = datetime(2026, 9, 3, 1, 29, 50, tzinfo=timezone.utc).timestamp()
+        opener = RecordingOpener(
+            [http_error(503, retry_after=retry_at), {"type": "domain", "domain": "example.com"}]
+        )
+        sleeps = []
+        client = NetlasClient(
+            "secret",
+            opener=opener,
+            sleeper=sleeps.append,
+            clock=lambda: now,
+        )
+
+        client.host_summary("example.com")
+
+        self.assertEqual(sleeps, [10.0])
 
 
 if __name__ == "__main__":

@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import math
 import time
+from datetime import timezone
+from email.utils import parsedate_to_datetime
 from typing import Any, Callable, Dict, List
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode
@@ -30,6 +32,7 @@ class NetlasClient:
         retry_backoff: float = 0.5,
         opener: Callable[..., Any] = urlopen,
         sleeper: Callable[[float], None] = time.sleep,
+        clock: Callable[[], float] = time.time,
     ) -> None:
         if not api_key or not api_key.strip():
             raise ValueError("A Netlas API key is required")
@@ -44,9 +47,10 @@ class NetlasClient:
         self.retry_backoff = retry_backoff
         self._opener = opener
         self._sleeper = sleeper
+        self._clock = clock
 
     def _retry_delay(self, error: HTTPError, attempt: int) -> float:
-        """Return a bounded delay, preferring a numeric Retry-After header."""
+        """Return a bounded delay, preferring a valid Retry-After header."""
 
         retry_after = error.headers.get("Retry-After") if error.headers else None
         if retry_after is not None:
@@ -55,7 +59,15 @@ class NetlasClient:
                 if math.isfinite(delay):
                     return min(max(delay, 0.0), 60.0)
             except ValueError:
-                pass
+                try:
+                    retry_at = parsedate_to_datetime(retry_after)
+                    if retry_at.tzinfo is None:
+                        retry_at = retry_at.replace(tzinfo=timezone.utc)
+                    delay = retry_at.timestamp() - self._clock()
+                    if math.isfinite(delay):
+                        return min(max(delay, 0.0), 60.0)
+                except (TypeError, ValueError, OverflowError):
+                    pass
         return min(self.retry_backoff * (2**attempt), 30.0)
 
     def _get(self, path: str, params: Dict[str, Any] | None = None) -> Any:
