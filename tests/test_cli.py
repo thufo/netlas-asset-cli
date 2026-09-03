@@ -1,14 +1,38 @@
 import io
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
-from netlas_asset_cli.cli import build_parser, main, valid_target
+from netlas_asset_cli.cli import _write_output, build_parser, main, valid_target
 
 
 class CliTests(unittest.TestCase):
     def test_valid_target_normalizes_domain(self):
         self.assertEqual(valid_target("Example.COM."), "example.com")
+
+    def test_file_output_replaces_existing_file(self):
+        with TemporaryDirectory() as directory:
+            output_path = Path(directory) / "results.json"
+            output_path.write_text("old", encoding="utf-8")
+
+            _write_output("new", output_path)
+
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "new")
+            self.assertEqual(list(Path(directory).iterdir()), [output_path])
+
+    def test_failed_atomic_replace_preserves_existing_file(self):
+        with TemporaryDirectory() as directory:
+            output_path = Path(directory) / "results.json"
+            output_path.write_text("old", encoding="utf-8")
+
+            with patch("pathlib.Path.replace", side_effect=OSError("replace failed")):
+                with self.assertRaisesRegex(OSError, "replace failed"):
+                    _write_output("new", output_path)
+
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "old")
+            self.assertEqual(list(Path(directory).iterdir()), [output_path])
 
     def test_request_options_reject_invalid_values(self):
         parser = build_parser()

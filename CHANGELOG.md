@@ -7,6 +7,7 @@ All notable changes to this project are documented in this file.
 - Support HTTP-date `Retry-After` headers used by some proxies and API gateways.
 - Add per-command `--timeout` and `--retries` controls.
 - Close HTTP error responses before retrying to avoid leaking network resources.
+- Write file exports atomically to protect existing results from partial writes.
 
 ## 0.2.0 - 2026-09-02
 

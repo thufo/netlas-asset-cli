@@ -26,6 +26,9 @@ applicable laws.
 The API key is read from `NETLAS_API_KEY`. It is never written to output files
 or logs by this tool.
 
+File output uses an atomic replacement, so an interrupted write does not leave
+an existing export partially overwritten.
+
 ## Install
 
 Clone the repository and install it in an isolated environment:

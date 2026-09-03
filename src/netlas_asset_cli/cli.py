@@ -8,6 +8,7 @@ import math
 import os
 import re
 import sys
+import tempfile
 from pathlib import Path
 from typing import Sequence
 
@@ -97,7 +98,24 @@ def _write_output(text: str, path: Path | None) -> None:
         sys.stdout.write(text)
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8", newline="")
+    temporary_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            newline="",
+            dir=path.parent,
+            prefix=f".{path.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as stream:
+            stream.write(text)
+            temporary_path = Path(stream.name)
+        temporary_path.replace(path)
+    except Exception:
+        if temporary_path is not None:
+            temporary_path.unlink(missing_ok=True)
+        raise
 
 
 def main(argv: Sequence[str] | None = None) -> int:
