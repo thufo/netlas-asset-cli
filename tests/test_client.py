@@ -3,7 +3,7 @@ import json
 import unittest
 from datetime import datetime, timezone
 from email.message import Message
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 
 from netlas_asset_cli.client import NetlasClient, NetlasError
@@ -139,6 +139,41 @@ class NetlasClientTests(unittest.TestCase):
 
         self.assertEqual(len(opener.requests), 3)
         self.assertEqual(sleeps, [0.25, 0.5])
+
+    def test_retries_transient_network_error_with_backoff(self):
+        opener = RecordingOpener(
+            [URLError("connection reset"), {"type": "domain", "domain": "example.com"}]
+        )
+        sleeps = []
+        client = NetlasClient("secret", opener=opener, sleeper=sleeps.append)
+
+        result = client.host_summary("example.com")
+
+        self.assertEqual(result["domain"], "example.com")
+        self.assertEqual(len(opener.requests), 2)
+        self.assertEqual(sleeps, [0.5])
+
+    def test_redacts_api_key_from_final_network_error(self):
+        opener = RecordingOpener([URLError("connection rejected secret-key\ntrace")])
+        client = NetlasClient("secret-key", opener=opener, max_retries=0)
+
+        with self.assertRaisesRegex(
+            NetlasError,
+            r"Could not reach Netlas: connection rejected \[REDACTED\] trace",
+        ):
+            client.host_summary("example.com")
+
+    def test_retries_direct_timeout(self):
+        opener = RecordingOpener(
+            [TimeoutError(), {"type": "domain", "domain": "example.com"}]
+        )
+        sleeps = []
+        client = NetlasClient("secret", opener=opener, sleeper=sleeps.append)
+
+        result = client.host_summary("example.com")
+
+        self.assertEqual(result["domain"], "example.com")
+        self.assertEqual(sleeps, [0.5])
 
     def test_honors_http_date_retry_after(self):
         retry_at = "Thu, 03 Sep 2026 01:30:00 GMT"

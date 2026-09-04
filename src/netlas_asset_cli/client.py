@@ -68,7 +68,17 @@ class NetlasClient:
                         return min(max(delay, 0.0), 60.0)
                 except (TypeError, ValueError, OverflowError):
                     pass
+        return self._backoff_delay(attempt)
+
+    def _backoff_delay(self, attempt: int) -> float:
+        """Return the bounded exponential delay for transient failures."""
+
         return min(self.retry_backoff * (2**attempt), 30.0)
+
+    def _safe_detail(self, value: Any) -> str:
+        """Normalize diagnostics and ensure credentials cannot be echoed."""
+
+        return " ".join(str(value).replace(self.api_key, "[REDACTED]").split())
 
     def _get(self, path: str, params: Dict[str, Any] | None = None) -> Any:
         query = urlencode(params or {}, doseq=True)
@@ -111,13 +121,21 @@ class NetlasClient:
                 # Gateways sometimes echo request metadata in error bodies. Keep
                 # diagnostics useful without allowing a credential or control
                 # characters to leak into terminal output and CI logs.
-                detail = detail.replace(self.api_key, "[REDACTED]")
-                detail = " ".join(detail.split())
+                detail = self._safe_detail(detail)
                 suffix = f": {detail[:300]}" if detail else ""
                 raise NetlasError(f"Netlas returned HTTP {exc.code}{suffix}") from exc
             except URLError as exc:
-                raise NetlasError(f"Could not reach Netlas: {exc.reason}") from exc
+                if attempt < self.max_retries:
+                    self._sleeper(self._backoff_delay(attempt))
+                    attempt += 1
+                    continue
+                reason = self._safe_detail(exc.reason)
+                raise NetlasError(f"Could not reach Netlas: {reason}") from exc
             except TimeoutError as exc:
+                if attempt < self.max_retries:
+                    self._sleeper(self._backoff_delay(attempt))
+                    attempt += 1
+                    continue
                 raise NetlasError("The Netlas request timed out") from exc
 
         try:

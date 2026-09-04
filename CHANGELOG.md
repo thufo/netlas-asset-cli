@@ -6,6 +6,8 @@ All notable changes to this project are documented in this file.
 
 - Redact API keys and normalize control characters in HTTP error details before
   printing them to terminals or CI logs.
+- Retry transient connection failures and direct timeouts with the same bounded
+  exponential backoff used for temporary HTTP errors.
 - Support HTTP-date `Retry-After` headers used by some proxies and API gateways.
 - Add per-command `--timeout` and `--retries` controls.
 - Close HTTP error responses before retrying to avoid leaking network resources.

@@ -6,7 +6,8 @@ authorized external asset discovery. It uses the official Netlas API to:
 - retrieve an aggregated summary for an IP address or domain;
 - search public internet-scan response data with Netlas query syntax;
 - export results as JSON, JSON Lines, or CSV for further analysis.
-- retry temporary API rate limits and service errors with bounded backoff.
+- retry temporary API rate limits, service errors, connection failures, and
+  timeouts with bounded backoff.
 
 The project is intentionally compact so it can be reviewed, extended, and
 integrated into defensive security workflows.
