@@ -37,6 +37,18 @@ def non_negative_int(value: str) -> int:
     return number
 
 
+def result_limit(value: str) -> int:
+    try:
+        number = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "value must be an integer from 1 to 200"
+        ) from exc
+    if not 1 <= number <= 200:
+        raise argparse.ArgumentTypeError("value must be an integer from 1 to 200")
+    return number
+
+
 def valid_target(value: str) -> str:
     target = value.strip()
     try:
@@ -64,7 +76,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     search = subparsers.add_parser("search", help="search Netlas public response data")
     search.add_argument("query", help="Netlas/Lucene query, quoted as one shell argument")
-    search.add_argument("--limit", type=int, default=20, choices=range(1, 201), metavar="1..200")
+    search.add_argument("--limit", type=result_limit, default=20, metavar="1..200")
     _add_request_arguments(search)
     _add_output_arguments(search)
 

@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Report concise `--limit` validation errors instead of printing all 200 valid
+  choices.
 - Redact API keys and normalize control characters in HTTP error details before
   printing them to terminals or CI logs.
 - Retry transient connection failures and direct timeouts with the same bounded

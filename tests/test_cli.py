@@ -46,6 +46,23 @@ class CliTests(unittest.TestCase):
                 with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                     parser.parse_args(["host", "example.com", option, value])
 
+    def test_limit_reports_a_concise_range_error(self):
+        parser = build_parser()
+        for value in ("0", "201", "not-a-number"):
+            with self.subTest(value=value):
+                errors = io.StringIO()
+                with redirect_stderr(errors), self.assertRaises(SystemExit):
+                    parser.parse_args(["search", "port:443", "--limit", value])
+                self.assertIn(
+                    "value must be an integer from 1 to 200",
+                    errors.getvalue(),
+                )
+
+        self.assertEqual(
+            parser.parse_args(["search", "port:443", "--limit", "200"]).limit,
+            200,
+        )
+
     @patch.dict("os.environ", {"NETLAS_API_KEY": "test-key"}, clear=True)
     @patch("netlas_asset_cli.cli.NetlasClient")
     def test_main_passes_request_options_to_client(self, client_class):
