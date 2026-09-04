@@ -1,108 +1,56 @@
-# Netlas Asset CLI
+# Netlas Asset
 
-Netlas Asset CLI is a small, dependency-free Python command-line tool for
-authorized external asset discovery. It uses the official Netlas API to:
+[简体中文](README.zh-CN.md) · [Русский](README.ru.md) · English
 
-- retrieve an aggregated summary for an IP address or domain;
-- search public internet-scan response data with Netlas query syntax;
-- export results as JSON, JSON Lines, or CSV for further analysis.
-- retry temporary API rate limits and service errors with bounded backoff.
+Netlas Asset is a multilingual desktop and command-line client for focused, authorized lookups using the official Netlas API. The `desk-cli` branch is the Node.js/Electron edition; the Python edition remains on `main`.
 
-The project is intentionally compact so it can be reviewed, extended, and
-integrated into defensive security workflows.
+## Features
 
-## Responsible use
+- Host summaries for IP addresses and fully qualified domains.
+- Netlas response searches with pagination and a local 200-result safety cap.
+- Desktop interface with table/JSON views, JSON/JSONL/CSV export, request history, and favorites.
+- English, Simplified Chinese, and Russian, with automatic locale detection and manual switching.
+- Secure optional API-key persistence through the operating system credential backend.
+- Windows and Linux builds for x64 and ARM64.
 
-Use this tool only for assets you own, administer, or have explicit permission
-to assess. The tool only queries data already indexed by Netlas; it does not
-actively scan a target. You are responsible for following Netlas terms and all
-applicable laws.
+Use this software only for assets you own or are explicitly authorized to investigate.
 
-## Requirements
+## Desktop
 
-- Python 3.9 or newer
-- A Netlas account and API key
+Download the installer or portable package for your platform from [GitHub Releases](https://github.com/thufo/netlas-asset-cli/releases). Open **Settings**, enter a Netlas API key, and choose whether it should be stored securely. On Linux, persistence is disabled when no secure secret backend is available.
 
-The API key is read from `NETLAS_API_KEY`. It is never written to output files
-or logs by this tool.
+The result toolbar exports the current response as JSON, JSONL, or CSV. History stores request metadata only; it never stores API responses or API keys.
 
-File output uses an atomic replacement, so an interrupted write does not leave
-an existing export partially overwritten.
-
-## Install
-
-Clone the repository and install it in an isolated environment:
-
-```bash
-python -m venv .venv
-```
-
-Windows PowerShell:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-python -m pip install -e .
-$env:NETLAS_API_KEY = 'replace-with-your-api-key'
-```
-
-Linux and macOS:
-
-```bash
-source .venv/bin/activate
-python -m pip install -e .
-export NETLAS_API_KEY='replace-with-your-api-key'
-```
-
-## Examples
-
-Get the current Netlas summary for an IP or domain:
-
-```bash
-netlas-asset host example.com
-netlas-asset host 1.1.1.1 --format csv --output host.csv
-```
-
-Search public response data. Quote the query so the shell passes it as one
-argument:
-
-```bash
-netlas-asset search 'host:example.com' --limit 20
-netlas-asset search 'geo.country:US AND port:443' --limit 40 --format jsonl
-netlas-asset search 'http.title.keyword:"Example Domain"' --format csv --output results.csv
-netlas-asset host example.com --timeout 10 --retries 1
-netlas-asset --version
-```
-
-The default result limit is 20 and the local safety cap is 200. This keeps the
-tool suitable for focused research and free/community API plans.
-
-Temporary HTTP `429` and `5xx` responses are retried twice. The client honors
-both numeric and HTTP-date `Retry-After` headers and otherwise uses a short
-exponential backoff.
-
-## Commands
+## CLI
 
 ```text
 netlas-asset host TARGET [--timeout SECONDS] [--retries COUNT] [--format json|jsonl|csv] [--output PATH]
 netlas-asset search QUERY [--limit 1..200] [--timeout SECONDS] [--retries COUNT] [--format json|jsonl|csv] [--output PATH]
 ```
 
-Set `NETLAS_BASE_URL` only when testing against a compatible API endpoint. The
-default is the official `https://app.netlas.io` service.
+Set the API key in the environment; there is deliberately no command-line key option that could leak into shell history.
+
+```powershell
+$env:NETLAS_API_KEY = "replace-with-your-api-key"
+netlas-asset host example.com
+netlas-asset search 'port:443 AND geo.country:US' --limit 40 --format csv --output results.csv
+netlas-asset --lang zh-CN host 1.1.1.1
+```
+
+Optional variables: `NETLAS_BASE_URL`, plus `LC_ALL`, `LC_MESSAGES`, or `LANG` for locale detection.
 
 ## Development
 
-The test suite uses only Python's standard library and never contacts Netlas:
-
-```bash
-python -m unittest discover -s tests -v
+```text
+npm ci
+npm run check
+npm run dev
 ```
 
-## API references
+`npm run dist` builds desktop packages for the current platform and architecture. `npm run package:cli` builds a standalone CLI. A tag such as `v0.3.0` triggers the multi-platform workflow only when it matches the package version and belongs to `desk-cli`.
 
-- [Netlas API reference](https://docs.netlas.io/api-reference/)
-- [Netlas search query language](https://docs.netlas.io/knowledge-base/query-language/)
+## Security and privacy
 
-## License
+Network requests and credential operations run in the Electron main process. The renderer is sandboxed, has no Node.js integration, and communicates through a narrow typed preload API. See [SECURITY.md](SECURITY.md).
 
-MIT
+MIT License.

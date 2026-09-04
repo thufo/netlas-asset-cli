@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'" />
+    <title>Netlas Asset</title>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">N</div>
+          <div><strong data-i18n="app.name">Netlas Asset</strong><small data-i18n="app.tagline">Focused asset intelligence</small></div>
+        </div>
+        <nav>
+          <button class="nav-item active" data-view="lookup"><span>⌕</span><span data-i18n="nav.lookup">Lookup</span></button>
+          <button class="nav-item" data-view="history"><span>◷</span><span data-i18n="nav.history">History</span></button>
+          <button class="nav-item" data-view="settings"><span>⚙</span><span data-i18n="nav.settings">Settings</span></button>
+          <button class="nav-item" data-view="about"><span>ⓘ</span><span data-i18n="nav.about">About</span></button>
+        </nav>
+        <div class="responsible"><span>✓</span><span data-i18n="lookup.responsible">Use only for authorized assets.</span></div>
+      </aside>
+
+      <main>
+        <header class="topbar">
+          <div id="connection-state" class="connection-state"><span class="dot"></span><span>Netlas API</span></div>
+          <select id="quick-language" aria-label="Language">
+            <option value="en">English</option><option value="zh-CN">中文</option><option value="ru">Русский</option>
+          </select>
+        </header>
+
+        <section id="view-lookup" class="view active">
+          <div class="page-heading"><div><h1 data-i18n="lookup.title">Asset lookup</h1><p data-i18n="lookup.subtitle">Query authorized assets.</p></div></div>
+          <div class="mode-tabs">
+            <button class="mode-tab active" data-mode="host" data-i18n="lookup.host">Host summary</button>
+            <button class="mode-tab" data-mode="search" data-i18n="lookup.search">Response search</button>
+          </div>
+          <form id="query-form" class="panel query-panel">
+            <label class="field field-grow"><span id="query-label" data-i18n="lookup.target">IP address or domain</span><input id="query-input" autocomplete="off" spellcheck="false" /></label>
+            <label id="limit-field" class="field small hidden"><span data-i18n="lookup.limit">Result limit</span><input id="query-limit" type="number" min="1" max="200" value="20" /></label>
+            <label class="field small"><span data-i18n="lookup.timeout">Timeout</span><input id="query-timeout" type="number" min="0.1" step="0.1" value="30" /></label>
+            <label class="field small"><span data-i18n="lookup.retries">Retries</span><input id="query-retries" type="number" min="0" step="1" value="2" /></label>
+            <div class="query-actions"><button id="run-query" class="button primary" type="submit" data-i18n="lookup.run">Run query</button><button id="cancel-query" class="button danger hidden" type="button" data-i18n="lookup.cancel">Cancel</button></div>
+          </form>
+          <div id="query-status" class="status hidden"></div>
+          <section class="panel results-panel">
+            <div class="results-toolbar">
+              <span id="result-count" class="muted"></span>
+              <div class="toolbar-actions">
+                <div class="segmented"><button class="result-view active" data-result-view="table" data-i18n="lookup.table">Table</button><button class="result-view" data-result-view="json" data-i18n="lookup.json">JSON</button></div>
+                <select id="export-format"><option value="json">JSON</option><option value="jsonl">JSONL</option><option value="csv">CSV</option></select>
+                <button id="export-result" class="button secondary" disabled data-i18n="lookup.export">Export</button>
+              </div>
+            </div>
+            <div id="empty-result" class="empty-state"><div class="empty-icon">⌕</div><p data-i18n="lookup.noResult">Run a query to view results.</p></div>
+            <div id="table-result" class="table-wrap hidden"></div>
+            <pre id="json-result" class="json-view hidden"></pre>
+          </section>
+        </section>
+
+        <section id="view-history" class="view">
+          <div class="page-heading"><div><h1 data-i18n="history.title">History & favorites</h1><p data-i18n="history.subtitle">Only request metadata is stored.</p></div><div class="heading-actions"><button id="clear-history" class="button secondary" data-i18n="history.clear">Clear non-favorites</button><button id="clear-all-history" class="button danger-outline" data-i18n="history.clearAll">Clear all</button></div></div>
+          <div id="history-list" class="history-list"></div>
+        </section>
+
+        <section id="view-settings" class="view">
+          <div class="page-heading"><div><h1 data-i18n="settings.title">Settings</h1><p data-i18n="settings.subtitle">Configure connection and language.</p></div></div>
+          <form id="settings-form" class="panel settings-panel">
+            <label class="field"><span data-i18n="settings.apiKey">Netlas API key</span><input id="settings-api-key" type="password" autocomplete="new-password" /><small id="saved-key-note" class="hint hidden" data-i18n="settings.savedKey">A saved key is available.</small></label>
+            <label class="field"><span data-i18n="settings.baseUrl">Netlas base URL</span><input id="settings-base-url" type="url" /></label>
+            <label class="field"><span data-i18n="settings.language">Language</span><select id="settings-language"><option value="en">English</option><option value="zh-CN">中文</option><option value="ru">Русский</option></select></label>
+            <label class="check-row"><input id="settings-remember" type="checkbox" /><span data-i18n="settings.remember">Remember API key securely</span></label>
+            <p id="secure-warning" class="warning hidden" data-i18n="settings.secureUnavailable">Secure storage is unavailable.</p>
+            <button class="button primary" type="submit" data-i18n="settings.save">Save settings</button>
+          </form>
+        </section>
+
+        <section id="view-about" class="view">
+          <div class="page-heading"><div><h1 data-i18n="about.title">About Netlas Asset</h1><p data-i18n="about.description">A multilingual Netlas client.</p></div></div>
+          <div class="panel about-panel">
+            <div class="about-logo">N</div>
+            <h2>Netlas Asset</h2>
+            <p id="about-version"></p><p id="about-platform" class="muted"></p>
+            <div class="divider"></div>
+            <p id="update-message" class="update-message"></p>
+            <div class="update-actions"><button id="check-update" class="button primary" data-i18n="about.update">Check for updates</button><button id="download-update" class="button primary hidden" data-i18n="about.download">Download update</button><button id="install-update" class="button primary hidden" data-i18n="about.install">Restart and install</button><button id="open-release" class="button secondary hidden" data-i18n="about.openRelease">Open release page</button></div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <div id="toast" class="toast hidden"></div>
+    <script type="module" src="/app.ts"></script>
+  </body>
+</html>

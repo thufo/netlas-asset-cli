@@ -1,0 +1,51 @@
+{
+  "name": "netlas-asset-cli",
+  "version": "0.3.0",
+  "description": "Multilingual desktop and command-line client for focused, authorized Netlas asset lookups",
+  "license": "MIT",
+  "author": "Thufo",
+  "repository": { "type": "git", "url": "https://github.com/thufo/netlas-asset-cli.git" },
+  "bugs": "https://github.com/thufo/netlas-asset-cli/issues",
+  "homepage": "https://github.com/thufo/netlas-asset-cli#readme",
+  "main": "dist/main/index.cjs",
+  "bin": { "netlas-asset": "dist/cli/netlas-asset.cjs" },
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "clean": "node scripts/clean.mjs",
+    "build:main": "esbuild src/desktop/main.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/main/index.cjs --external:electron --external:electron-updater",
+    "build:preload": "esbuild src/desktop/preload.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/preload/index.cjs --external:electron",
+    "build:cli": "esbuild src/cli/index.ts --bundle --platform=node --format=cjs --target=node22 --outfile=dist/cli/netlas-asset.cjs --banner:js=\"#!/usr/bin/env node\"",
+    "build:renderer": "vite build",
+    "build": "npm run clean && npm run build:main && npm run build:preload && npm run build:cli && npm run build:renderer",
+    "dev": "npm run build && electron .",
+    "start": "electron .",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "check": "npm run typecheck && npm run lint && npm test && npm run build",
+    "pack": "npm run build && node scripts/package-desktop.mjs --dir",
+    "dist": "npm run build && node scripts/package-desktop.mjs",
+    "package:cli": "npm run build:cli && node scripts/package-cli.mjs",
+    "checksums": "node scripts/checksums.mjs release"
+  },
+  "dependencies": {
+    "commander": "^14.0.0",
+    "electron-updater": "^6.6.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.29.0",
+    "@types/node": "^22.15.0",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@yao-pkg/pkg": "^6.7.0",
+    "electron": "^37.2.0",
+    "electron-builder": "^26.0.12",
+    "esbuild": "^0.25.5",
+    "eslint": "^9.29.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.34.1",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
+  },
+  "pkg": { "outputPath": "release/cli" }
+}

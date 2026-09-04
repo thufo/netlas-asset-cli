@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [desk-cli]
+  pull_request:
+    branches: [desk-cli]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+
+  architecture-smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-2025, platform: win32, arch: x64 }
+          - { os: windows-11-arm, platform: win32, arch: arm64 }
+          - { os: ubuntu-24.04, platform: linux, arch: x64 }
+          - { os: ubuntu-24.04-arm, platform: linux, arch: arm64 }
+    runs-on: ${{ matrix.os }}
+    env:
+      BUILD_PLATFORM: ${{ matrix.platform }}
+      BUILD_ARCH: ${{ matrix.arch }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run package:cli
+      - name: Desktop smoke test
+        shell: bash
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm start -- --smoke-test
+      - name: Desktop smoke test
+        shell: pwsh
+        if: runner.os == 'Windows'
+        run: npm start -- --smoke-test
+      - run: npm run pack
+      - name: CLI smoke test
+        shell: bash
+        if: runner.os == 'Linux'
+        run: ./release/cli/netlas-asset-cli-*-linux-${{ matrix.arch }} --version
+      - name: CLI smoke test
+        shell: pwsh
+        if: runner.os == 'Windows'
+        run: |
+          $binary = (Get-ChildItem ./release/cli/netlas-asset-cli-*-windows-${{ matrix.arch }}.exe).FullName
+          & $binary --version

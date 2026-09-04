@@ -1,0 +1,76 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  verify-source:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: git fetch origin desk-cli
+      - name: Require tag commit on desk-cli
+        run: git merge-base --is-ancestor "$GITHUB_SHA" origin/desk-cli
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - name: Require matching package version
+        run: node -e "if ('v' + require('./package.json').version !== process.env.GITHUB_REF_NAME) process.exit(1)"
+      - run: npm run check
+
+  build:
+    needs: verify-source
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-2025, platform: win32, arch: x64 }
+          - { os: windows-11-arm, platform: win32, arch: arm64 }
+          - { os: ubuntu-24.04, platform: linux, arch: x64 }
+          - { os: ubuntu-24.04-arm, platform: linux, arch: arm64 }
+    runs-on: ${{ matrix.os }}
+    env:
+      BUILD_PLATFORM: ${{ matrix.platform }}
+      BUILD_ARCH: ${{ matrix.arch }}
+      CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run build
+      - run: npm run package:cli
+      - run: npm run dist -- --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: netlas-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            release/cli/*
+            release/desktop/*.exe
+            release/desktop/*.AppImage
+            release/desktop/*.deb
+            release/desktop/*.blockmap
+            release/desktop/*.yml
+            !release/desktop/builder-debug.yml
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: release, merge-multiple: true }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/checksums.mjs release
+      - name: Publish GitHub Release
+        env: { GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}" }
+        run: gh release create "$GITHUB_REF_NAME" release/SHA256SUMS.txt release/**/* --generate-notes --verify-tag

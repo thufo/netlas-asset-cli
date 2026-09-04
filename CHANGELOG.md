@@ -2,12 +2,20 @@
 
 All notable changes to this project are documented in this file.
 
-## Unreleased
+## 0.3.0 - 2026-09-04
 
-- Support HTTP-date `Retry-After` headers used by some proxies and API gateways.
-- Add per-command `--timeout` and `--retries` controls.
-- Close HTTP error responses before retrying to avoid leaking network resources.
-- Write file exports atomically to protect existing results from partial writes.
+- Rewrite the project in Node.js 22 and TypeScript on the `desk-cli` branch.
+- Add a sandboxed Electron desktop application with host lookup, response
+  search, table/JSON views, JSON/JSONL/CSV export, history, and favorites.
+- Add English, Simplified Chinese, and Russian interfaces with automatic locale
+  detection and manual selection.
+- Add optional OS-backed secure API-key persistence and refuse insecure Linux
+  `basic_text` storage.
+- Add update checks and user-confirmed updates for NSIS and AppImage packages.
+- Build Windows and Linux desktop and standalone CLI artifacts for x64 and
+  ARM64, with SHA256 checksums and tag-based GitHub Releases.
+- Preserve bounded retries, `Retry-After`, pagination, timeout, cancellation,
+  response validation, and atomic exports in the shared core.
 
 ## 0.2.0 - 2026-09-02
 
