@@ -13,8 +13,8 @@ jobs:
   verify:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -35,8 +35,8 @@ jobs:
       BUILD_PLATFORM: ${{ matrix.platform }}
       BUILD_ARCH: ${{ matrix.arch }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -46,7 +46,7 @@ jobs:
       - name: Desktop smoke test
         shell: bash
         if: runner.os == 'Linux'
-        run: xvfb-run -a npm start -- --smoke-test
+        run: xvfb-run -a npm start -- --no-sandbox --disable-gpu --smoke-test
       - name: Desktop smoke test
         shell: pwsh
         if: runner.os == 'Windows'
