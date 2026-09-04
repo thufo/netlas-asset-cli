@@ -111,6 +111,18 @@ class NetlasClientTests(unittest.TestCase):
 
         self.assertEqual(len(opener.requests), 1)
 
+    def test_redacts_api_key_and_control_characters_from_error_detail(self):
+        opener = RecordingOpener(
+            [http_error(403, body=b"rejected secret-key\nupstream\ttrace")]
+        )
+        client = NetlasClient("secret-key", opener=opener)
+
+        with self.assertRaisesRegex(
+            NetlasError,
+            r"HTTP 403: rejected \[REDACTED\] upstream trace",
+        ):
+            client.host_summary("example.com")
+
     def test_retries_server_error_with_exponential_backoff(self):
         opener = RecordingOpener(
             [http_error(503), http_error(503), {"type": "domain", "domain": "example.com"}]

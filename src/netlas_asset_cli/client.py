@@ -108,6 +108,11 @@ class NetlasClient:
                     pass
                 finally:
                     exc.close()
+                # Gateways sometimes echo request metadata in error bodies. Keep
+                # diagnostics useful without allowing a credential or control
+                # characters to leak into terminal output and CI logs.
+                detail = detail.replace(self.api_key, "[REDACTED]")
+                detail = " ".join(detail.split())
                 suffix = f": {detail[:300]}" if detail else ""
                 raise NetlasError(f"Netlas returned HTTP {exc.code}{suffix}") from exc
             except URLError as exc:
