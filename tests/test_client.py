@@ -50,9 +50,25 @@ def http_error(status, *, retry_after=None, body=b""):
 
 
 class NetlasClientTests(unittest.TestCase):
+    def test_rejects_malformed_or_unsafe_base_urls(self):
+        invalid_urls = (
+            "example.test",
+            "ftp://example.test",
+            "https://user:password@example.test",
+            "https://example.test?token=secret",
+            "https://example.test/#fragment",
+            "https://example.test:99999",
+        )
+        for base_url in invalid_urls:
+            with self.subTest(base_url=base_url), self.assertRaisesRegex(
+                ValueError,
+                r"base_url must be an HTTP\(S\) URL",
+            ):
+                NetlasClient("secret-key", base_url=base_url)
+
     def test_host_summary_uses_bearer_auth_and_public_indices(self):
         opener = RecordingOpener([{"type": "domain", "domain": "example.com"}])
-        client = NetlasClient("secret-key", base_url="https://example.test", opener=opener)
+        client = NetlasClient("secret-key", base_url="https://example.test/", opener=opener)
 
         result = client.host_summary("example.com")
 

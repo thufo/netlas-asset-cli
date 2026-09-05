@@ -83,6 +83,23 @@ class CliTests(unittest.TestCase):
         )
         self.assertIn('"domain": "example.com"', output.getvalue())
 
+    @patch.dict(
+        "os.environ",
+        {"NETLAS_API_KEY": "test-key", "NETLAS_BASE_URL": "not-a-url"},
+        clear=True,
+    )
+    def test_main_reports_invalid_base_url_without_a_traceback(self):
+        errors = io.StringIO()
+
+        with redirect_stderr(errors):
+            result = main(["host", "example.com"])
+
+        self.assertEqual(result, 1)
+        self.assertEqual(
+            errors.getvalue(),
+            "error: base_url must be an HTTP(S) URL without credentials, query, or fragment\n",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

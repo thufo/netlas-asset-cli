@@ -9,7 +9,7 @@ from datetime import timezone
 from email.utils import parsedate_to_datetime
 from typing import Any, Callable, Dict, List
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 from . import __version__
@@ -41,13 +41,42 @@ class NetlasClient:
         if retry_backoff < 0:
             raise ValueError("retry_backoff cannot be negative")
         self.api_key = api_key.strip()
-        self.base_url = base_url.rstrip("/")
+        self.base_url = self._validated_base_url(base_url)
         self.timeout = timeout
         self.max_retries = max_retries
         self.retry_backoff = retry_backoff
         self._opener = opener
         self._sleeper = sleeper
         self._clock = clock
+
+    @staticmethod
+    def _validated_base_url(value: str) -> str:
+        """Return a normalized HTTP(S) API root or fail without echoing it."""
+
+        try:
+            candidate = value.strip()
+            parsed = urlsplit(candidate)
+            # Accessing ``port`` also validates malformed and out-of-range ports.
+            _ = parsed.port
+        except (AttributeError, TypeError, ValueError) as exc:
+            raise ValueError(
+                "base_url must be an HTTP(S) URL without credentials, query, or fragment"
+            ) from exc
+
+        invalid = (
+            parsed.scheme.lower() not in {"http", "https"}
+            or not parsed.hostname
+            or parsed.username is not None
+            or parsed.password is not None
+            or bool(parsed.query)
+            or bool(parsed.fragment)
+            or any(character.isspace() for character in candidate)
+        )
+        if invalid:
+            raise ValueError(
+                "base_url must be an HTTP(S) URL without credentials, query, or fragment"
+            )
+        return candidate.rstrip("/")
 
     def _retry_delay(self, error: HTTPError, attempt: int) -> float:
         """Return a bounded delay, preferring a valid Retry-After header."""

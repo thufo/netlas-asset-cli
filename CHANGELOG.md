@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Validate custom API base URLs before requests and report configuration errors
+  without a traceback or accidental credential disclosure.
 - Report concise `--limit` validation errors instead of printing all 200 valid
   choices.
 - Redact API keys and normalize control characters in HTTP error details before

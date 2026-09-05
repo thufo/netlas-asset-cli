@@ -138,14 +138,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not api_key:
         parser.error("NETLAS_API_KEY is not set")
 
-    client = NetlasClient(
-        api_key,
-        base_url=os.environ.get("NETLAS_BASE_URL", "https://app.netlas.io"),
-        timeout=args.timeout,
-        max_retries=args.retries,
-    )
-
     try:
+        client = NetlasClient(
+            api_key,
+            base_url=os.environ.get("NETLAS_BASE_URL", "https://app.netlas.io"),
+            timeout=args.timeout,
+            max_retries=args.retries,
+        )
         if args.command == "host":
             result = client.host_summary(args.target)
         else:
