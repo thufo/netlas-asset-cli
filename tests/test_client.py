@@ -9,6 +9,16 @@ from urllib.parse import parse_qs, urlsplit
 from netlas_asset_cli.client import NetlasClient, NetlasError
 
 
+class RecordingBytesIO(io.BytesIO):
+    def __init__(self, value):
+        super().__init__(value)
+        self.read_sizes = []
+
+    def read(self, size=-1):
+        self.read_sizes.append(size)
+        return super().read(size)
+
+
 class FakeResponse:
     def __init__(self, payload):
         self.payload = payload
@@ -139,6 +149,22 @@ class NetlasClientTests(unittest.TestCase):
             client.host_summary("example.com")
 
         self.assertEqual(len(opener.requests), 1)
+
+    def test_limits_error_body_reads(self):
+        body = RecordingBytesIO(b"x" * 10_000)
+        error = HTTPError(
+            "https://example.test/api/host/example.com/",
+            400,
+            "test error",
+            Message(),
+            body,
+        )
+        client = NetlasClient("secret", opener=RecordingOpener([error]))
+
+        with self.assertRaises(NetlasError):
+            client.host_summary("example.com")
+
+        self.assertEqual(body.read_sizes, [4096])
 
     def test_redacts_api_key_and_control_characters_from_error_detail(self):
         opener = RecordingOpener(

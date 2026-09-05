@@ -15,6 +15,9 @@ from urllib.request import Request, urlopen
 from . import __version__
 
 
+_ERROR_DETAIL_READ_LIMIT = 4096
+
+
 class NetlasError(RuntimeError):
     """Raised when the Netlas API cannot complete a request."""
 
@@ -145,7 +148,11 @@ class NetlasClient:
 
                 detail = ""
                 try:
-                    detail = exc.read().decode("utf-8", errors="replace").strip()
+                    detail = (
+                        exc.read(_ERROR_DETAIL_READ_LIMIT)
+                        .decode("utf-8", errors="replace")
+                        .strip()
+                    )
                 except Exception:
                     pass
                 finally:

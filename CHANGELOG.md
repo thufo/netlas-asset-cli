@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Bound HTTP error-body reads to prevent oversized gateway responses from
+  consuming excessive memory while formatting diagnostics.
 - Reject API keys containing whitespace, control characters, or non-ASCII text
   before constructing HTTP headers, without echoing the rejected value.
 - Validate custom API base URLs before requests and report configuration errors
