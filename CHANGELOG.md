@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Reject API keys containing whitespace, control characters, or non-ASCII text
+  before constructing HTTP headers, without echoing the rejected value.
 - Validate custom API base URLs before requests and report configuration errors
   without a traceback or accidental credential disclosure.
 - Report concise `--limit` validation errors instead of printing all 200 valid

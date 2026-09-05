@@ -100,6 +100,20 @@ class CliTests(unittest.TestCase):
             "error: base_url must be an HTTP(S) URL without credentials, query, or fragment\n",
         )
 
+    @patch.dict("os.environ", {"NETLAS_API_KEY": "secret\nkey"}, clear=True)
+    def test_main_does_not_echo_an_unsafe_api_key(self):
+        errors = io.StringIO()
+
+        with redirect_stderr(errors):
+            result = main(["host", "example.com"])
+
+        self.assertEqual(result, 1)
+        self.assertEqual(
+            errors.getvalue(),
+            "error: A Netlas API key must contain only visible ASCII characters\n",
+        )
+        self.assertNotIn("secret", errors.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

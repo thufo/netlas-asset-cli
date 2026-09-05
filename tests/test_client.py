@@ -50,6 +50,19 @@ def http_error(status, *, retry_after=None, body=b""):
 
 
 class NetlasClientTests(unittest.TestCase):
+    def test_rejects_api_keys_that_are_unsafe_for_http_headers(self):
+        invalid_api_keys = (
+            "secret\nkey",
+            "secret key",
+            "s\N{LATIN SMALL LETTER E WITH ACUTE}cret",
+        )
+        for api_key in invalid_api_keys:
+            with self.subTest(api_key=api_key), self.assertRaisesRegex(
+                ValueError,
+                "only visible ASCII characters",
+            ):
+                NetlasClient(api_key)
+
     def test_rejects_malformed_or_unsafe_base_urls(self):
         invalid_urls = (
             "example.test",

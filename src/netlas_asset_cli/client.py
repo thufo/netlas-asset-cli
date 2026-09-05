@@ -34,13 +34,16 @@ class NetlasClient:
         sleeper: Callable[[float], None] = time.sleep,
         clock: Callable[[], float] = time.time,
     ) -> None:
-        if not api_key or not api_key.strip():
+        if not isinstance(api_key, str) or not api_key.strip():
             raise ValueError("A Netlas API key is required")
+        normalized_api_key = api_key.strip()
+        if any(not 33 <= ord(character) <= 126 for character in normalized_api_key):
+            raise ValueError("A Netlas API key must contain only visible ASCII characters")
         if max_retries < 0:
             raise ValueError("max_retries cannot be negative")
         if retry_backoff < 0:
             raise ValueError("retry_backoff cannot be negative")
-        self.api_key = api_key.strip()
+        self.api_key = normalized_api_key
         self.base_url = self._validated_base_url(base_url)
         self.timeout = timeout
         self.max_retries = max_retries
