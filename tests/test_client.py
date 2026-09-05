@@ -60,6 +60,33 @@ def http_error(status, *, retry_after=None, body=b""):
 
 
 class NetlasClientTests(unittest.TestCase):
+    def test_rejects_invalid_request_policy_settings(self):
+        timeout_message = "timeout must be a finite number greater than zero"
+        retries_message = "max_retries must be a non-negative integer"
+        invalid_settings = (
+            ({"timeout": 0}, timeout_message),
+            ({"timeout": float("nan")}, timeout_message),
+            ({"timeout": float("inf")}, timeout_message),
+            ({"timeout": True}, timeout_message),
+            ({"max_retries": -1}, retries_message),
+            ({"max_retries": 1.5}, retries_message),
+            ({"max_retries": True}, retries_message),
+            (
+                {"retry_backoff": float("nan")},
+                "retry_backoff must be a finite non-negative number",
+            ),
+            (
+                {"retry_backoff": -0.1},
+                "retry_backoff must be a finite non-negative number",
+            ),
+        )
+        for settings, message in invalid_settings:
+            with self.subTest(settings=settings), self.assertRaisesRegex(
+                ValueError,
+                message,
+            ):
+                NetlasClient("secret", **settings)
+
     def test_rejects_api_keys_that_are_unsafe_for_http_headers(self):
         invalid_api_keys = (
             "secret\nkey",

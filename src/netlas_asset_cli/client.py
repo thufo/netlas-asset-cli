@@ -42,10 +42,26 @@ class NetlasClient:
         normalized_api_key = api_key.strip()
         if any(not 33 <= ord(character) <= 126 for character in normalized_api_key):
             raise ValueError("A Netlas API key must contain only visible ASCII characters")
-        if max_retries < 0:
-            raise ValueError("max_retries cannot be negative")
-        if retry_backoff < 0:
-            raise ValueError("retry_backoff cannot be negative")
+        if (
+            isinstance(timeout, bool)
+            or not isinstance(timeout, (int, float))
+            or not math.isfinite(timeout)
+            or timeout <= 0
+        ):
+            raise ValueError("timeout must be a finite number greater than zero")
+        if (
+            isinstance(max_retries, bool)
+            or not isinstance(max_retries, int)
+            or max_retries < 0
+        ):
+            raise ValueError("max_retries must be a non-negative integer")
+        if (
+            isinstance(retry_backoff, bool)
+            or not isinstance(retry_backoff, (int, float))
+            or not math.isfinite(retry_backoff)
+            or retry_backoff < 0
+        ):
+            raise ValueError("retry_backoff must be a finite non-negative number")
         self.api_key = normalized_api_key
         self.base_url = self._validated_base_url(base_url)
         self.timeout = timeout

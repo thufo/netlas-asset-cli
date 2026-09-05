@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Reject non-finite or incorrectly typed timeout, retry-count, and backoff
+  settings before issuing a request.
 - Bound HTTP error-body reads to prevent oversized gateway responses from
   consuming excessive memory while formatting diagnostics.
 - Reject API keys containing whitespace, control characters, or non-ASCII text
