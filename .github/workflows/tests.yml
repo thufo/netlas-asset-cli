@@ -24,3 +24,21 @@ jobs:
         run: python -m pip install -e .
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+
+  package-smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+      - name: Build wheel and source distribution
+        run: |
+          python -m pip install build
+          python -m build
+      - name: Verify the installed wheel and console entry point
+        run: |
+          python -m venv package-test
+          package-test/bin/python -m pip install --no-deps dist/*.whl
+          package-test/bin/netlas-asset --version
+          package-test/bin/netlas-asset --help
