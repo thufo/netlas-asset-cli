@@ -30,6 +30,8 @@ class FakeResponse:
         return False
 
     def read(self):
+        if isinstance(self.payload, bytes):
+            return self.payload
         return json.dumps(self.payload).encode("utf-8")
 
 
@@ -60,6 +62,35 @@ def http_error(status, *, retry_after=None, body=b""):
 
 
 class NetlasClientTests(unittest.TestCase):
+    def test_rejects_invalid_json_responses(self):
+        for raw_response in (b"{not-json", b"\xff"):
+            with self.subTest(raw_response=raw_response):
+                client = NetlasClient(
+                    "secret",
+                    opener=RecordingOpener([raw_response]),
+                )
+
+                with self.assertRaisesRegex(
+                    NetlasError,
+                    "Netlas returned an invalid JSON response",
+                ):
+                    client.host_summary("example.com")
+
+    def test_rejects_unexpected_host_response_shape(self):
+        client = NetlasClient("secret", opener=RecordingOpener([["unexpected"]]))
+
+        with self.assertRaisesRegex(NetlasError, "Unexpected host response type"):
+            client.host_summary("example.com")
+
+    def test_rejects_unexpected_search_response_shape(self):
+        client = NetlasClient(
+            "secret",
+            opener=RecordingOpener([{"items": "unexpected"}]),
+        )
+
+        with self.assertRaisesRegex(NetlasError, "Unexpected search response type"):
+            client.search_responses("port:443")
+
     def test_rejects_invalid_request_policy_settings(self):
         timeout_message = "timeout must be a finite number greater than zero"
         retries_message = "max_retries must be a non-negative integer"
