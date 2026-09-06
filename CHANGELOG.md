@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Publish standardized SPDX license metadata, include the license file
+  explicitly, and declare each supported Python version.
 - Accept `--output -` as an explicit standard-output target for scripts and
   command wrappers.
 - Neutralize formula-like text in CSV headers and values to make exports safer
