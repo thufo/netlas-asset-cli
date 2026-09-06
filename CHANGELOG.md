@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Accept `--output -` as an explicit standard-output target for scripts and
+  command wrappers.
 - Neutralize formula-like text in CSV headers and values to make exports safer
   to open in spreadsheet applications.
 - Reject non-finite or incorrectly typed timeout, retry-count, and backoff

@@ -92,6 +92,9 @@ netlas-asset host TARGET [--timeout SECONDS] [--retries COUNT] [--format json|js
 netlas-asset search QUERY [--limit 1..200] [--timeout SECONDS] [--retries COUNT] [--format json|jsonl|csv] [--output PATH]
 ```
 
+Omit `--output` to print results normally, or pass `--output -` when a script
+needs to select standard output explicitly.
+
 Set `NETLAS_BASE_URL` only when testing against a compatible API endpoint. The
 default is the official `https://app.netlas.io` service.
 

@@ -22,6 +22,14 @@ class CliTests(unittest.TestCase):
             self.assertEqual(output_path.read_text(encoding="utf-8"), "new")
             self.assertEqual(list(Path(directory).iterdir()), [output_path])
 
+    def test_dash_output_writes_to_stdout(self):
+        output = io.StringIO()
+
+        with redirect_stdout(output):
+            _write_output("result\n", Path("-"))
+
+        self.assertEqual(output.getvalue(), "result\n")
+
     def test_failed_atomic_replace_preserves_existing_file(self):
         with TemporaryDirectory() as directory:
             output_path = Path(directory) / "results.json"

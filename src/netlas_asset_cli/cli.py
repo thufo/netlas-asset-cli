@@ -102,11 +102,15 @@ def _add_request_arguments(parser: argparse.ArgumentParser) -> None:
 
 def _add_output_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--format", choices=("json", "jsonl", "csv"), default="json")
-    parser.add_argument("--output", type=Path, help="write results to a file instead of stdout")
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="write results to PATH, or - for stdout",
+    )
 
 
 def _write_output(text: str, path: Path | None) -> None:
-    if path is None:
+    if path is None or path == Path("-"):
         sys.stdout.write(text)
         return
     path.parent.mkdir(parents=True, exist_ok=True)
