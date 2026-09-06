@@ -5,7 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, List
 
 
 def _records(value: Any) -> List[Dict[str, Any]]:
@@ -21,6 +21,11 @@ def _csv_value(value: Any) -> Any:
         return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
     if value is None:
         return ""
+    if isinstance(value, str) and (
+        value.startswith(("\t", "\r", "\n"))
+        or value.lstrip().startswith(("=", "+", "-", "@"))
+    ):
+        return f"'{value}"
     return value
 
 
@@ -48,10 +53,10 @@ def render(value: Any, output_format: str) -> str:
                     seen.add(key)
                     fieldnames.append(key)
         stream = io.StringIO(newline="")
-        writer = csv.DictWriter(stream, fieldnames=fieldnames, extrasaction="ignore")
-        writer.writeheader()
+        writer = csv.writer(stream)
+        writer.writerow([_csv_value(key) for key in fieldnames])
         for record in records:
-            writer.writerow({key: _csv_value(record.get(key)) for key in fieldnames})
+            writer.writerow([_csv_value(record.get(key)) for key in fieldnames])
         return stream.getvalue()
 
     raise ValueError(f"Unsupported output format: {output_format}")

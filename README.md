@@ -30,6 +30,10 @@ or logs by this tool.
 File output uses an atomic replacement, so an interrupted write does not leave
 an existing export partially overwritten.
 
+CSV exports prefix text cells that spreadsheet programs could interpret as
+formulas with an apostrophe. Use JSON or JSON Lines when exact text preservation
+is required.
+
 ## Install
 
 Clone the repository and install it in an isolated environment:

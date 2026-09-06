@@ -18,6 +18,23 @@ class OutputTests(unittest.TestCase):
         self.assertEqual(row["host"], "192.0.2.1")
         self.assertEqual(json.loads(row["ports"]), [80, 443])
 
+    def test_csv_neutralizes_spreadsheet_formulas(self):
+        text = render(
+            [
+                {
+                    "=unsafe-header": "=1+1",
+                    "leading-space": "  @command",
+                    "leading-tab": "\tformula",
+                    "number": -2,
+                }
+            ],
+            "csv",
+        )
+
+        header, row = list(csv.reader(io.StringIO(text)))
+        self.assertEqual(header[0], "'=unsafe-header")
+        self.assertEqual(row, ["'=1+1", "'  @command", "'\tformula", "-2"])
+
 
 if __name__ == "__main__":
     unittest.main()

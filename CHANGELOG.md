@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Neutralize formula-like text in CSV headers and values to make exports safer
+  to open in spreadsheet applications.
 - Reject non-finite or incorrectly typed timeout, retry-count, and backoff
   settings before issuing a request.
 - Bound HTTP error-body reads to prevent oversized gateway responses from
