@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Extract concise messages from structured JSON API errors while preserving
+  credential redaction.
 - Retry HTTP `408 Request Timeout` responses because all client requests are
   idempotent GET operations.
 - Publish standardized SPDX license metadata, include the license file

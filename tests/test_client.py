@@ -222,6 +222,19 @@ class NetlasClientTests(unittest.TestCase):
 
         self.assertEqual(len(opener.requests), 1)
 
+    def test_extracts_a_concise_json_error_detail(self):
+        body = json.dumps(
+            {"detail": "invalid query\nfor secret-key"}
+        ).encode("utf-8")
+        opener = RecordingOpener([http_error(400, body=body)])
+        client = NetlasClient("secret-key", opener=opener)
+
+        with self.assertRaisesRegex(
+            NetlasError,
+            r"HTTP 400: invalid query for \[REDACTED\]$",
+        ):
+            client.host_summary("example.com")
+
     def test_limits_error_body_reads(self):
         body = RecordingBytesIO(b"x" * 10_000)
         error = HTTPError(

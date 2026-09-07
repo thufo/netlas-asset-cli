@@ -131,6 +131,23 @@ class NetlasClient:
 
         return " ".join(str(value).replace(self.api_key, "[REDACTED]").split())
 
+    def _http_error_detail(self, raw: bytes) -> str:
+        """Extract a concise message from a text or JSON API error body."""
+
+        decoded = raw.decode("utf-8", errors="replace").strip()
+        try:
+            payload = json.loads(decoded)
+        except json.JSONDecodeError:
+            pass
+        else:
+            if isinstance(payload, dict):
+                for key in ("detail", "message", "error"):
+                    value = payload.get(key)
+                    if isinstance(value, str) and value.strip():
+                        decoded = value
+                        break
+        return self._safe_detail(decoded)
+
     def _get(self, path: str, params: Dict[str, Any] | None = None) -> Any:
         query = urlencode(params or {}, doseq=True)
         url = f"{self.base_url}{path}"
@@ -164,10 +181,8 @@ class NetlasClient:
 
                 detail = ""
                 try:
-                    detail = (
+                    detail = self._http_error_detail(
                         exc.read(_ERROR_DETAIL_READ_LIMIT)
-                        .decode("utf-8", errors="replace")
-                        .strip()
                     )
                 except Exception:
                     pass
