@@ -3,6 +3,7 @@ import json
 import unittest
 from datetime import datetime, timezone
 from email.message import Message
+from http.client import IncompleteRead
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 
@@ -35,6 +36,11 @@ class FakeResponse:
         return json.dumps(self.payload).encode("utf-8")
 
 
+class ReadErrorResponse(FakeResponse):
+    def read(self):
+        raise self.payload
+
+
 class RecordingOpener:
     def __init__(self, payloads):
         self.payloads = list(payloads)
@@ -45,6 +51,8 @@ class RecordingOpener:
         result = self.payloads.pop(0)
         if isinstance(result, Exception):
             raise result
+        if isinstance(result, FakeResponse):
+            return result
         return FakeResponse(result)
 
 
@@ -292,6 +300,28 @@ class NetlasClientTests(unittest.TestCase):
         self.assertEqual(result["domain"], "example.com")
         self.assertEqual(len(opener.requests), 2)
         self.assertEqual(sleeps, [0.5])
+
+    def test_retries_failures_while_reading_a_response(self):
+        read_errors = (
+            ConnectionResetError("connection reset while reading"),
+            IncompleteRead(b"partial", 10),
+        )
+        for read_error in read_errors:
+            with self.subTest(read_error=read_error):
+                opener = RecordingOpener(
+                    [
+                        ReadErrorResponse(read_error),
+                        {"type": "domain", "domain": "example.com"},
+                    ]
+                )
+                sleeps = []
+                client = NetlasClient("secret", opener=opener, sleeper=sleeps.append)
+
+                result = client.host_summary("example.com")
+
+                self.assertEqual(result["domain"], "example.com")
+                self.assertEqual(len(opener.requests), 2)
+                self.assertEqual(sleeps, [0.5])
 
     def test_redacts_api_key_from_final_network_error(self):
         opener = RecordingOpener([URLError("connection rejected secret-key\ntrace")])

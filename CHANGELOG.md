@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Retry connection resets and incomplete reads that occur after an HTTP
+  response has started.
 - Extract concise messages from structured JSON API errors while preserving
   credential redaction.
 - Retry HTTP `408 Request Timeout` responses because all client requests are

@@ -7,6 +7,7 @@ import math
 import time
 from datetime import timezone
 from email.utils import parsedate_to_datetime
+from http.client import IncompleteRead
 from typing import Any, Callable, Dict, List
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote, urlencode, urlsplit
@@ -207,6 +208,15 @@ class NetlasClient:
                     attempt += 1
                     continue
                 raise NetlasError("The Netlas request timed out") from exc
+            except (OSError, IncompleteRead) as exc:
+                if attempt < self.max_retries:
+                    self._sleeper(self._backoff_delay(attempt))
+                    attempt += 1
+                    continue
+                reason = self._safe_detail(exc)
+                raise NetlasError(
+                    f"Could not complete the Netlas request: {reason}"
+                ) from exc
 
         try:
             return json.loads(raw.decode("utf-8"))
