@@ -11,6 +11,10 @@ from netlas_asset_cli.cli import _write_output, build_parser, main, valid_target
 class CliTests(unittest.TestCase):
     def test_valid_target_normalizes_domain(self):
         self.assertEqual(valid_target("Example.COM."), "example.com")
+        self.assertEqual(
+            valid_target("B\N{LATIN CAPITAL LETTER U WITH DIAERESIS}CHER.Example."),
+            "xn--bcher-kva.example",
+        )
 
     def test_file_output_replaces_existing_file(self):
         with TemporaryDirectory() as directory:

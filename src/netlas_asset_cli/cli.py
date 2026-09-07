@@ -56,8 +56,12 @@ def valid_target(value: str) -> str:
         return target
     except ValueError:
         pass
-    if DOMAIN_RE.fullmatch(target):
-        return target.rstrip(".").lower()
+    try:
+        ascii_domain = target.encode("idna").decode("ascii")
+    except UnicodeError:
+        ascii_domain = ""
+    if DOMAIN_RE.fullmatch(ascii_domain):
+        return ascii_domain.rstrip(".").lower()
     raise argparse.ArgumentTypeError("TARGET must be an IP address or fully qualified domain")
 
 

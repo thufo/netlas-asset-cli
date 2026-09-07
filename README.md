@@ -64,6 +64,7 @@ Get the current Netlas summary for an IP or domain:
 
 ```bash
 netlas-asset host example.com
+netlas-asset host bücher.example
 netlas-asset host 1.1.1.1 --format csv --output host.csv
 ```
 

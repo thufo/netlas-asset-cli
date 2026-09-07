@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Accept internationalized domain names for host lookups and normalize them to
+  their ASCII IDNA representation.
 - Require HTTPS for custom remote API endpoints while retaining HTTP support
   for loopback development servers.
 - Reject malformed search-result items instead of silently omitting them from
