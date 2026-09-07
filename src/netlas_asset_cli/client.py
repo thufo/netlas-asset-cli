@@ -154,7 +154,7 @@ class NetlasClient:
                     raw = response.read()
                 break
             except HTTPError as exc:
-                retryable = exc.code == 429 or 500 <= exc.code <= 599
+                retryable = exc.code in {408, 429} or 500 <= exc.code <= 599
                 if retryable and attempt < self.max_retries:
                     delay = self._retry_delay(exc, attempt)
                     exc.close()

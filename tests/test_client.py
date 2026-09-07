@@ -199,6 +199,20 @@ class NetlasClientTests(unittest.TestCase):
         self.assertEqual(sleeps, [2.0])
         self.assertTrue(rate_limit_error.fp is None or rate_limit_error.fp.closed)
 
+    def test_retries_http_request_timeout(self):
+        request_timeout = http_error(408)
+        opener = RecordingOpener(
+            [request_timeout, {"type": "domain", "domain": "example.com"}]
+        )
+        sleeps = []
+        client = NetlasClient("secret", opener=opener, sleeper=sleeps.append)
+
+        result = client.host_summary("example.com")
+
+        self.assertEqual(result["domain"], "example.com")
+        self.assertEqual(sleeps, [0.5])
+        self.assertTrue(request_timeout.fp is None or request_timeout.fp.closed)
+
     def test_does_not_retry_authentication_error(self):
         opener = RecordingOpener([http_error(401, body=b'invalid token')])
         client = NetlasClient("secret", opener=opener, sleeper=lambda _: None)

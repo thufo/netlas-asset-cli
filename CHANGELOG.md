@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Retry HTTP `408 Request Timeout` responses because all client requests are
+  idempotent GET operations.
 - Publish standardized SPDX license metadata, include the license file
   explicitly, and declare each supported Python version.
 - Accept `--output -` as an explicit standard-output target for scripts and
