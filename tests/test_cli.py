@@ -105,7 +105,8 @@ class CliTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertEqual(
             errors.getvalue(),
-            "error: base_url must be an HTTP(S) URL without credentials, query, or fragment\n",
+            "error: base_url must use HTTPS (HTTP is allowed only for loopback hosts) "
+            "and cannot contain credentials, a query, or a fragment\n",
         )
 
     @patch.dict("os.environ", {"NETLAS_API_KEY": "secret\nkey"}, clear=True)

@@ -96,7 +96,8 @@ Omit `--output` to print results normally, or pass `--output -` when a script
 needs to select standard output explicitly.
 
 Set `NETLAS_BASE_URL` only when testing against a compatible API endpoint. The
-default is the official `https://app.netlas.io` service.
+default is the official `https://app.netlas.io` service. Custom remote endpoints
+must use HTTPS; plain HTTP is accepted only for loopback development servers.
 
 ## Development
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import math
 import time
@@ -17,6 +18,10 @@ from . import __version__
 
 
 _ERROR_DETAIL_READ_LIMIT = 4096
+_BASE_URL_ERROR = (
+    "base_url must use HTTPS (HTTP is allowed only for loopback hosts) and "
+    "cannot contain credentials, a query, or a fragment"
+)
 
 
 class NetlasError(RuntimeError):
@@ -82,13 +87,18 @@ class NetlasClient:
             # Accessing ``port`` also validates malformed and out-of-range ports.
             _ = parsed.port
         except (AttributeError, TypeError, ValueError) as exc:
-            raise ValueError(
-                "base_url must be an HTTP(S) URL without credentials, query, or fragment"
-            ) from exc
+            raise ValueError(_BASE_URL_ERROR) from exc
+
+        hostname = parsed.hostname or ""
+        try:
+            loopback_host = ipaddress.ip_address(hostname).is_loopback
+        except ValueError:
+            loopback_host = hostname.rstrip(".").lower() == "localhost"
 
         invalid = (
             parsed.scheme.lower() not in {"http", "https"}
-            or not parsed.hostname
+            or not hostname
+            or (parsed.scheme.lower() == "http" and not loopback_host)
             or parsed.username is not None
             or parsed.password is not None
             or bool(parsed.query)
@@ -96,9 +106,7 @@ class NetlasClient:
             or any(character.isspace() for character in candidate)
         )
         if invalid:
-            raise ValueError(
-                "base_url must be an HTTP(S) URL without credentials, query, or fragment"
-            )
+            raise ValueError(_BASE_URL_ERROR)
         return candidate.rstrip("/")
 
     def _retry_delay(self, error: HTTPError, attempt: int) -> float:

@@ -153,6 +153,7 @@ class NetlasClientTests(unittest.TestCase):
         invalid_urls = (
             "example.test",
             "ftp://example.test",
+            "http://example.test",
             "https://user:password@example.test",
             "https://example.test?token=secret",
             "https://example.test/#fragment",
@@ -161,9 +162,26 @@ class NetlasClientTests(unittest.TestCase):
         for base_url in invalid_urls:
             with self.subTest(base_url=base_url), self.assertRaisesRegex(
                 ValueError,
-                r"base_url must be an HTTP\(S\) URL",
+                "base_url must use HTTPS",
             ):
                 NetlasClient("secret-key", base_url=base_url)
+
+    def test_allows_http_for_loopback_test_endpoints(self):
+        for base_url in (
+            "http://localhost:8000",
+            "http://127.0.0.2:8000",
+            "http://[::1]:8000",
+        ):
+            with self.subTest(base_url=base_url):
+                opener = RecordingOpener(
+                    [{"type": "domain", "domain": "example.com"}]
+                )
+                client = NetlasClient("secret-key", base_url=base_url, opener=opener)
+
+                client.host_summary("example.com")
+
+                request, _ = opener.requests[0]
+                self.assertTrue(request.full_url.startswith(base_url))
 
     def test_host_summary_uses_bearer_auth_and_public_indices(self):
         opener = RecordingOpener([{"type": "domain", "domain": "example.com"}])

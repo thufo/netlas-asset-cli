@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Require HTTPS for custom remote API endpoints while retaining HTTP support
+  for loopback development servers.
 - Reject malformed search-result items instead of silently omitting them from
   exported results.
 - Retry connection resets and incomplete reads that occur after an HTTP
