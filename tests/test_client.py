@@ -91,13 +91,23 @@ class NetlasClientTests(unittest.TestCase):
             client.host_summary("example.com")
 
     def test_rejects_unexpected_search_response_shape(self):
-        client = NetlasClient(
-            "secret",
-            opener=RecordingOpener([{"items": "unexpected"}]),
+        invalid_payloads = (
+            {"items": "unexpected"},
+            {"items": ["unexpected"]},
+            {"items": [{"data": []}]},
         )
+        for payload in invalid_payloads:
+            with self.subTest(payload=payload):
+                client = NetlasClient(
+                    "secret",
+                    opener=RecordingOpener([payload]),
+                )
 
-        with self.assertRaisesRegex(NetlasError, "Unexpected search response type"):
-            client.search_responses("port:443")
+                with self.assertRaisesRegex(
+                    NetlasError,
+                    "Unexpected search response type",
+                ):
+                    client.search_responses("port:443")
 
     def test_rejects_invalid_request_policy_settings(self):
         timeout_message = "timeout must be a finite number greater than zero"

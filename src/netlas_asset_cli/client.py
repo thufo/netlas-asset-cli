@@ -262,10 +262,13 @@ class NetlasClient:
                 break
 
             for item in items:
-                if isinstance(item, dict) and isinstance(item.get("data"), dict):
-                    results.append(item["data"])
-                    if len(results) >= limit:
-                        break
+                if not isinstance(item, dict) or not isinstance(
+                    item.get("data"), dict
+                ):
+                    raise NetlasError("Unexpected search response type")
+                results.append(item["data"])
+                if len(results) >= limit:
+                    break
 
             start += len(items)
             if len(items) < 20:

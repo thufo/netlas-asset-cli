@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Reject malformed search-result items instead of silently omitting them from
+  exported results.
 - Retry connection resets and incomplete reads that occur after an HTTP
   response has started.
 - Extract concise messages from structured JSON API errors while preserving
