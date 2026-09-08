@@ -187,7 +187,7 @@ class NetlasClientTests(unittest.TestCase):
         opener = RecordingOpener([{"type": "domain", "domain": "example.com"}])
         client = NetlasClient("secret-key", base_url="https://example.test/", opener=opener)
 
-        result = client.host_summary("example.com")
+        result = client.host_summary("  example.com  ")
 
         self.assertEqual(result["domain"], "example.com")
         request, timeout = opener.requests[0]
@@ -208,12 +208,25 @@ class NetlasClientTests(unittest.TestCase):
         opener = RecordingOpener([first_page, second_page])
         client = NetlasClient("secret-key", base_url="https://example.test", opener=opener)
 
-        results = client.search_responses("port:443", limit=21)
+        results = client.search_responses("  port:443  ", limit=21)
 
         self.assertEqual(len(results), 21)
         self.assertEqual(results[-1]["host"], "192.0.2.21")
         second_request, _ = opener.requests[1]
-        self.assertEqual(parse_qs(urlsplit(second_request.full_url).query)["start"], ["20"])
+        second_query = parse_qs(urlsplit(second_request.full_url).query)
+        self.assertEqual(second_query["start"], ["20"])
+        self.assertEqual(second_query["q"], ["port:443"])
+
+    def test_rejects_empty_client_inputs_before_requesting(self):
+        opener = RecordingOpener([])
+        client = NetlasClient("secret", opener=opener)
+
+        with self.assertRaisesRegex(ValueError, "A host target is required"):
+            client.host_summary("  ")
+        with self.assertRaisesRegex(ValueError, "A search query is required"):
+            client.search_responses("\t")
+
+        self.assertEqual(opener.requests, [])
 
     def test_search_rejects_excessive_local_limit(self):
         client = NetlasClient("secret", opener=RecordingOpener([]))

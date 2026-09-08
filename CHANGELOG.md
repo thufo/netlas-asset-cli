@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Trim host targets and search queries, and reject empty client inputs before
+  making an API request.
 - Exit cleanly when a downstream pipeline command closes standard output early.
 - Derive distribution metadata from the package's runtime version so releases
   cannot publish mismatched version numbers.

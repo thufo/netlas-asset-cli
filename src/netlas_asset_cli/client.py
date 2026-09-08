@@ -234,7 +234,9 @@ class NetlasClient:
     def host_summary(self, target: str) -> Dict[str, Any]:
         """Return public, aggregated information for an IP address or domain."""
 
-        safe_target = quote(target, safe="")
+        if not isinstance(target, str) or not target.strip():
+            raise ValueError("A host target is required")
+        safe_target = quote(target.strip(), safe="")
         data = self._get(
             f"/api/host/{safe_target}/",
             {"public_indices_only": "true"},
@@ -246,18 +248,19 @@ class NetlasClient:
     def search_responses(self, query: str, *, limit: int = 20) -> List[Dict[str, Any]]:
         """Search public response data and return up to ``limit`` documents."""
 
-        if not query.strip():
+        if not isinstance(query, str) or not query.strip():
             raise ValueError("A search query is required")
         if not 1 <= limit <= 200:
             raise ValueError("limit must be between 1 and 200")
 
+        normalized_query = query.strip()
         results: List[Dict[str, Any]] = []
         start = 0
         while len(results) < limit:
             payload = self._get(
                 "/api/responses/",
                 {
-                    "q": query,
+                    "q": normalized_query,
                     "start": start,
                     "source_type": "include",
                 },
