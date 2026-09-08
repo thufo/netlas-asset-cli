@@ -4,6 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Exit cleanly when a downstream pipeline command closes standard output early.
 - Derive distribution metadata from the package's runtime version so releases
   cannot publish mismatched version numbers.
 - Accept internationalized domain names for host lookups and normalize them to

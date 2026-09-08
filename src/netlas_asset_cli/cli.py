@@ -116,6 +116,7 @@ def _add_output_arguments(parser: argparse.ArgumentParser) -> None:
 def _write_output(text: str, path: Path | None) -> None:
     if path is None or path == Path("-"):
         sys.stdout.write(text)
+        sys.stdout.flush()
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary_path: Path | None = None
@@ -138,6 +139,16 @@ def _write_output(text: str, path: Path | None) -> None:
         raise
 
 
+def _silence_broken_stdout() -> None:
+    """Prevent interpreter shutdown from flushing a pipe that has closed."""
+
+    try:
+        with open(os.devnull, "w", encoding="utf-8") as devnull:
+            os.dup2(devnull.fileno(), sys.stdout.fileno())
+    except (AttributeError, OSError, ValueError):
+        pass
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -158,6 +169,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         else:
             result = client.search_responses(args.query, limit=args.limit)
         _write_output(render(result, args.format), args.output)
+        return 0
+    except BrokenPipeError:
+        _silence_broken_stdout()
         return 0
     except (NetlasError, OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)

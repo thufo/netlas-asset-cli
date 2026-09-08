@@ -8,6 +8,11 @@ from unittest.mock import patch
 from netlas_asset_cli.cli import _write_output, build_parser, main, valid_target
 
 
+class BrokenStdout(io.StringIO):
+    def write(self, value):
+        raise BrokenPipeError
+
+
 class CliTests(unittest.TestCase):
     def test_valid_target_normalizes_domain(self):
         self.assertEqual(valid_target("Example.COM."), "example.com")
@@ -94,6 +99,18 @@ class CliTests(unittest.TestCase):
             max_retries=0,
         )
         self.assertIn('"domain": "example.com"', output.getvalue())
+
+    @patch.dict("os.environ", {"NETLAS_API_KEY": "test-key"}, clear=True)
+    @patch("netlas_asset_cli.cli.NetlasClient")
+    def test_main_exits_cleanly_when_a_pipe_closes(self, client_class):
+        client_class.return_value.host_summary.return_value = {"domain": "example.com"}
+        errors = io.StringIO()
+
+        with redirect_stdout(BrokenStdout()), redirect_stderr(errors):
+            result = main(["host", "example.com"])
+
+        self.assertEqual(result, 0)
+        self.assertEqual(errors.getvalue(), "")
 
     @patch.dict(
         "os.environ",
