@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Derive distribution metadata from the package's runtime version so releases
+  cannot publish mismatched version numbers.
 - Accept internationalized domain names for host lookups and normalize them to
   their ASCII IDNA representation.
 - Require HTTPS for custom remote API endpoints while retaining HTTP support
