@@ -82,9 +82,12 @@ netlas-asset --version
 The default result limit is 20 and the local safety cap is 200. This keeps the
 tool suitable for focused research and free/community API plans.
 
-Temporary HTTP `429` and `5xx` responses are retried twice. The client honors
-both numeric and HTTP-date `Retry-After` headers and otherwise uses a short
-exponential backoff.
+Temporary HTTP `408`, `429`, and `5xx` responses are retried twice. The client
+honors both numeric and HTTP-date `Retry-After` headers and otherwise uses a
+short exponential backoff.
+
+Each successful API response is limited to 64 MiB to prevent a malformed or
+compromised endpoint from causing unbounded memory use.
 
 ## Commands
 

@@ -18,6 +18,7 @@ from . import __version__
 
 
 _ERROR_DETAIL_READ_LIMIT = 4096
+_RESPONSE_READ_LIMIT = 64 * 1024 * 1024
 _BASE_URL_ERROR = (
     "base_url must use HTTPS (HTTP is allowed only for loopback hosts) and "
     "cannot contain credentials, a query, or a fragment"
@@ -177,7 +178,9 @@ class NetlasClient:
         while True:
             try:
                 with self._opener(request, timeout=self.timeout) as response:
-                    raw = response.read()
+                    raw = response.read(_RESPONSE_READ_LIMIT + 1)
+                    if len(raw) > _RESPONSE_READ_LIMIT:
+                        raise NetlasError("Netlas response exceeded the size limit")
                 break
             except HTTPError as exc:
                 retryable = exc.code in {408, 429} or 500 <= exc.code <= 599

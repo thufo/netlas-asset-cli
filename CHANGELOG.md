@@ -4,6 +4,7 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Limit each successful API response to 64 MiB to prevent unbounded memory use.
 - Trim host targets and search queries, and reject empty client inputs before
   making an API request.
 - Exit cleanly when a downstream pipeline command closes standard output early.

@@ -4,6 +4,7 @@ import unittest
 from datetime import datetime, timezone
 from email.message import Message
 from http.client import IncompleteRead
+from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 
@@ -30,14 +31,16 @@ class FakeResponse:
     def __exit__(self, exc_type, exc, traceback):
         return False
 
-    def read(self):
+    def read(self, size=-1):
         if isinstance(self.payload, bytes):
-            return self.payload
-        return json.dumps(self.payload).encode("utf-8")
+            data = self.payload
+        else:
+            data = json.dumps(self.payload).encode("utf-8")
+        return data if size < 0 else data[:size]
 
 
 class ReadErrorResponse(FakeResponse):
-    def read(self):
+    def read(self, size=-1):
         raise self.payload
 
 
@@ -83,6 +86,16 @@ class NetlasClientTests(unittest.TestCase):
                     "Netlas returned an invalid JSON response",
                 ):
                     client.host_summary("example.com")
+
+    @patch("netlas_asset_cli.client._RESPONSE_READ_LIMIT", 8)
+    def test_rejects_oversized_success_responses(self):
+        client = NetlasClient(
+            "secret",
+            opener=RecordingOpener([b"123456789"]),
+        )
+
+        with self.assertRaisesRegex(NetlasError, "response exceeded the size limit"):
+            client.host_summary("example.com")
 
     def test_rejects_unexpected_host_response_shape(self):
         client = NetlasClient("secret", opener=RecordingOpener([["unexpected"]]))
