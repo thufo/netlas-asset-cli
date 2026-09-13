@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Prevent HTTP redirects from forwarding the Netlas API authorization header
+  to another URL.
 - Limit each successful API response to 64 MiB to prevent unbounded memory use.
 - Trim host targets and search queries, and reject empty client inputs before
   making an API request.

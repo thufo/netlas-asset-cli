@@ -19,6 +19,9 @@ to assess. The tool only queries data already indexed by Netlas; it does not
 actively scan a target. You are responsible for following Netlas terms and all
 applicable laws.
 
+The API authorization header is sent only to the initial request URL and is not
+forwarded if an API endpoint redirects to another location.
+
 ## Requirements
 
 - Python 3.9 or newer

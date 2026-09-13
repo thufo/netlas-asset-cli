@@ -7,6 +7,7 @@ from http.client import IncompleteRead
 from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
+from urllib.request import HTTPRedirectHandler
 
 from netlas_asset_cli.client import NetlasClient, NetlasError
 
@@ -209,6 +210,26 @@ class NetlasClientTests(unittest.TestCase):
         parsed = urlsplit(request.full_url)
         self.assertEqual(parsed.path, "/api/host/example.com/")
         self.assertEqual(parse_qs(parsed.query), {"public_indices_only": ["true"]})
+
+    def test_does_not_forward_bearer_auth_on_redirect(self):
+        opener = RecordingOpener([{"type": "domain", "domain": "example.com"}])
+        client = NetlasClient("secret-key", opener=opener)
+
+        client.host_summary("example.com")
+
+        request, _ = opener.requests[0]
+        redirected = HTTPRedirectHandler().redirect_request(
+            request,
+            None,
+            302,
+            "Found",
+            Message(),
+            "https://redirect.example/",
+        )
+        self.assertEqual(request.get_header("Authorization"), "Bearer secret-key")
+        self.assertNotIn("Authorization", request.headers)
+        self.assertIsNotNone(redirected)
+        self.assertIsNone(redirected.get_header("Authorization"))
 
     def test_search_paginates_and_extracts_data(self):
         first_page = {

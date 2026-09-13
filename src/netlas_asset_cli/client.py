@@ -168,10 +168,16 @@ class NetlasClient:
             url,
             headers={
                 "Accept": "application/json",
-                "Authorization": f"Bearer {self.api_key}",
                 "User-Agent": f"netlas-asset-cli/{__version__}",
             },
             method="GET",
+        )
+        # ``urllib`` copies normal headers when following redirects. Mark the
+        # credential as unredirected so a compromised or misconfigured API
+        # endpoint cannot forward it to another URL.
+        request.add_unredirected_header(
+            "Authorization",
+            f"Bearer {self.api_key}",
         )
 
         attempt = 0
