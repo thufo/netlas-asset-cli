@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Run the unit suite and console-entry smoke check on Windows in continuous
+  integration.
 - Prevent HTTP redirects from forwarding the Netlas API authorization header
   to another URL.
 - Limit each successful API response to 64 MiB to prevent unbounded memory use.
