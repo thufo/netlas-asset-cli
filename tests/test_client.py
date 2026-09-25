@@ -363,6 +363,25 @@ class NetlasClientTests(unittest.TestCase):
         self.assertEqual(len(opener.requests), 3)
         self.assertEqual(sleeps, [0.25, 0.5])
 
+    def test_falls_back_to_backoff_for_invalid_retry_after(self):
+        opener = RecordingOpener(
+            [
+                http_error(503, retry_after="not-a-delay"),
+                {"type": "domain", "domain": "example.com"},
+            ]
+        )
+        sleeps = []
+        client = NetlasClient(
+            "secret",
+            opener=opener,
+            sleeper=sleeps.append,
+            retry_backoff=0.25,
+        )
+
+        client.host_summary("example.com")
+
+        self.assertEqual(sleeps, [0.25])
+
     def test_retries_transient_network_error_with_backoff(self):
         opener = RecordingOpener(
             [URLError("connection reset"), {"type": "domain", "domain": "example.com"}]
