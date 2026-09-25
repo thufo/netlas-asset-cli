@@ -24,14 +24,24 @@ DOMAIN_RE = re.compile(
 
 
 def positive_float(value: str) -> float:
-    number = float(value)
+    try:
+        number = float(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "value must be a finite number greater than zero"
+        ) from exc
     if not math.isfinite(number) or number <= 0:
         raise argparse.ArgumentTypeError("value must be a finite number greater than zero")
     return number
 
 
 def non_negative_int(value: str) -> int:
-    number = int(value)
+    try:
+        number = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            "value must be a non-negative integer"
+        ) from exc
     if number < 0:
         raise argparse.ArgumentTypeError("value cannot be negative")
     return number

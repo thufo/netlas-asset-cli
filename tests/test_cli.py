@@ -56,12 +56,27 @@ class CliTests(unittest.TestCase):
         invalid_options = [
             ("--timeout", "0"),
             ("--timeout", "nan"),
+            ("--timeout", "not-a-number"),
             ("--retries", "-1"),
+            ("--retries", "not-a-number"),
         ]
         for option, value in invalid_options:
             with self.subTest(option=option, value=value):
                 with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                     parser.parse_args(["host", "example.com", option, value])
+
+    def test_request_options_report_concise_type_errors(self):
+        parser = build_parser()
+        cases = (
+            ("--timeout", "not-a-number", "value must be a finite number greater than zero"),
+            ("--retries", "not-a-number", "value must be a non-negative integer"),
+        )
+        for option, value, message in cases:
+            with self.subTest(option=option):
+                errors = io.StringIO()
+                with redirect_stderr(errors), self.assertRaises(SystemExit):
+                    parser.parse_args(["host", "example.com", option, value])
+                self.assertIn(message, errors.getvalue())
 
     def test_limit_reports_a_concise_range_error(self):
         parser = build_parser()
