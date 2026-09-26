@@ -172,6 +172,7 @@ class NetlasClientTests(unittest.TestCase):
             "https://example.test?token=secret",
             "https://example.test/#fragment",
             "https://example.test:99999",
+            "https://example.test/\x00",
         )
         for base_url in invalid_urls:
             with self.subTest(base_url=base_url), self.assertRaisesRegex(

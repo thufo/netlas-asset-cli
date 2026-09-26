@@ -105,6 +105,10 @@ class NetlasClient:
             or bool(parsed.query)
             or bool(parsed.fragment)
             or any(character.isspace() for character in candidate)
+            or any(
+                ord(character) < 0x20 or ord(character) == 0x7F
+                for character in candidate
+            )
         )
         if invalid:
             raise ValueError(_BASE_URL_ERROR)
