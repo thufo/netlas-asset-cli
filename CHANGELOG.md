@@ -4,6 +4,12 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Pin GitHub Actions dependencies to immutable revisions and stop CI jobs that
+  exceed 15 minutes.
+- Fall back to exponential backoff when a temporary API error has an invalid
+  `Retry-After` header.
+- Report concise validation errors when `--timeout` or `--retries` receives a
+  non-numeric value.
 - Run the unit suite and console-entry smoke check on Windows in continuous
   integration.
 - Prevent HTTP redirects from forwarding the Netlas API authorization header
