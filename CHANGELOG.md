@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Neutralize terminal control characters in HTTP and network error messages
+  while preserving API key redaction and normal Unicode text.
 - Remove partial temporary exports when writing fails, while preserving any
   existing destination file.
 - Pin GitHub Actions dependencies to immutable revisions and stop CI jobs that

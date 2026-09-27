@@ -347,6 +347,28 @@ class NetlasClientTests(unittest.TestCase):
         ):
             client.host_summary("example.com")
 
+    def test_neutralizes_terminal_controls_in_error_messages(self):
+        unsafe = "\x1b[2Jrejected secret-key\x00upstream\x7ftrace\u009b31m caf\u00e9 \u4e2d\u6587"
+        expected = "[2Jrejected [REDACTED] upstream trace 31m caf\u00e9 \u4e2d\u6587"
+        errors = (
+            http_error(403, body=unsafe.encode("utf-8")),
+            http_error(403, body=json.dumps({"detail": unsafe}).encode("utf-8")),
+            URLError(unsafe),
+            ConnectionResetError(unsafe),
+        )
+        for error in errors:
+            with self.subTest(error_type=type(error).__name__):
+                client = NetlasClient(
+                    "secret-key", opener=RecordingOpener([error]), max_retries=0
+                )
+
+                with self.assertRaises(NetlasError) as raised:
+                    client.host_summary("example.com")
+
+                message = str(raised.exception)
+                self.assertTrue(message.endswith(expected), repr(message))
+                self.assertNotIn("secret-key", message)
+
     def test_retries_server_error_with_exponential_backoff(self):
         opener = RecordingOpener(
             [http_error(503), http_error(503), {"type": "domain", "domain": "example.com"}]

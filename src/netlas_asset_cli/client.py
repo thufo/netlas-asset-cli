@@ -143,7 +143,13 @@ class NetlasClient:
     def _safe_detail(self, value: Any) -> str:
         """Normalize diagnostics and ensure credentials cannot be echoed."""
 
-        return " ".join(str(value).replace(self.api_key, "[REDACTED]").split())
+        redacted = str(value).replace(self.api_key, "[REDACTED]")
+        sanitized = "".join(
+            " " if ord(character) < 0x20 or 0x7F <= ord(character) <= 0x9F
+            else character
+            for character in redacted
+        )
+        return " ".join(sanitized.split())
 
     def _http_error_detail(self, raw: bytes) -> str:
         """Extract a concise message from a text or JSON API error body."""
