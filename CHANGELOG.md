@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Cover both search-limit boundaries in regression tests to ensure pagination
+  stops without an extra API request.
 - Require integer search limits from 1 to 200 in the Python client and reject
   invalid values before requesting API data.
 - Report excessively nested JSON responses as API errors instead of exposing

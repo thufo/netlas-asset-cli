@@ -285,6 +285,35 @@ class NetlasClientTests(unittest.TestCase):
 
         self.assertEqual(opener.requests, [])
 
+    def test_search_stops_at_limit_without_extra_page_requests(self):
+        pages = [
+            {
+                "items": [
+                    {"data": {"host": f"192.0.2.{index}"}}
+                    for index in range(start + 1, start + 21)
+                ]
+            }
+            for start in range(0, 200, 20)
+        ]
+        for limit in (1, 200):
+            with self.subTest(limit=limit):
+                opener = RecordingOpener(pages + [{"items": []}])
+                client = NetlasClient("secret", opener=opener)
+
+                results = client.search_responses("port:443", limit=limit)
+
+                self.assertEqual(
+                    results,
+                    [{"host": f"192.0.2.{index}"} for index in range(1, limit + 1)],
+                )
+                requested_starts = [
+                    parse_qs(urlsplit(request.full_url).query)["start"][0]
+                    for request, _ in opener.requests
+                ]
+                self.assertEqual(
+                    requested_starts, [str(start) for start in range(0, limit, 20)]
+                )
+
     def test_search_rejects_invalid_limits_before_requesting(self):
         for limit in (0, 201, True, False, 1.5, 20.0, "20", None, float("nan")):
             with self.subTest(limit=limit):
