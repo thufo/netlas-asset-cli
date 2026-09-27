@@ -285,10 +285,16 @@ class NetlasClientTests(unittest.TestCase):
 
         self.assertEqual(opener.requests, [])
 
-    def test_search_rejects_excessive_local_limit(self):
-        client = NetlasClient("secret", opener=RecordingOpener([]))
-        with self.assertRaises(ValueError):
-            client.search_responses("port:443", limit=201)
+    def test_search_rejects_invalid_limits_before_requesting(self):
+        for limit in (0, 201, True, False, 1.5, 20.0, "20", None, float("nan")):
+            with self.subTest(limit=limit):
+                opener = RecordingOpener([{"items": []}])
+                client = NetlasClient("secret", opener=opener)
+
+                with self.assertRaisesRegex(ValueError, "limit must be"):
+                    client.search_responses("port:443", limit=limit)
+
+                self.assertEqual(opener.requests, [])
 
     def test_retries_rate_limit_and_honors_retry_after(self):
         rate_limit_error = http_error(429, retry_after=2)

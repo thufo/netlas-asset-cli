@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Require integer search limits from 1 to 200 in the Python client and reject
+  invalid values before requesting API data.
 - Report excessively nested JSON responses as API errors instead of exposing
   an unhandled decoder recursion traceback.
 - Neutralize terminal control characters in HTTP and network error messages

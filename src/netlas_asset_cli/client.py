@@ -271,8 +271,12 @@ class NetlasClient:
 
         if not isinstance(query, str) or not query.strip():
             raise ValueError("A search query is required")
-        if not 1 <= limit <= 200:
-            raise ValueError("limit must be between 1 and 200")
+        if (
+            isinstance(limit, bool)
+            or not isinstance(limit, int)
+            or not 1 <= limit <= 200
+        ):
+            raise ValueError("limit must be an integer between 1 and 200")
 
         normalized_query = query.strip()
         results: List[Dict[str, Any]] = []
