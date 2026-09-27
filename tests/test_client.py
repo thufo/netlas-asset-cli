@@ -1,5 +1,6 @@
 import io
 import json
+import sys
 import unittest
 from datetime import datetime, timezone
 from email.message import Message
@@ -89,18 +90,22 @@ class NetlasClientTests(unittest.TestCase):
                     client.host_summary("example.com")
 
     def test_reports_excessively_nested_json_without_retrying(self):
-        # Recent Python decoders use a C stack limit rather than the Python
-        # recursion limit, so use a response deep enough for both implementations.
-        depth = 100_000
+        # Native decoder depth limits vary by Python version and platform.
+        # The standard-library Python decoder gives a reproducible failure
+        # while still parsing a real JSON response.
+        decoder = json.JSONDecoder()
+        decoder.scan_once = json.scanner.py_make_scanner(decoder)
+        depth = sys.getrecursionlimit() + 10
         raw_response = b'{"nested":' * depth + b"0" + b"}" * depth
         opener = RecordingOpener([raw_response])
         sleeps = []
         client = NetlasClient("secret", opener=opener, sleeper=sleeps.append)
 
-        with self.assertRaisesRegex(
-            NetlasError, "Netlas JSON response exceeded the nesting limit"
-        ):
-            client.host_summary("example.com")
+        with patch("netlas_asset_cli.client.json.loads", side_effect=decoder.decode):
+            with self.assertRaisesRegex(
+                NetlasError, "Netlas JSON response exceeded the nesting limit"
+            ):
+                client.host_summary("example.com")
 
         self.assertEqual(len(opener.requests), 1)
         self.assertEqual(sleeps, [])
