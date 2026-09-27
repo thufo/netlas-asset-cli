@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Report excessively nested JSON responses as API errors instead of exposing
+  an unhandled decoder recursion traceback.
 - Neutralize terminal control characters in HTTP and network error messages
   while preserving API key redaction and normal Unicode text.
 - Remove partial temporary exports when writing fails, while preserving any

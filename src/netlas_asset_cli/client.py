@@ -247,6 +247,8 @@ class NetlasClient:
 
         try:
             return json.loads(raw.decode("utf-8"))
+        except RecursionError as exc:
+            raise NetlasError("Netlas JSON response exceeded the nesting limit") from exc
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise NetlasError("Netlas returned an invalid JSON response") from exc
 
