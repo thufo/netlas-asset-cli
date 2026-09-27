@@ -2,7 +2,7 @@ import io
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
-from tempfile import TemporaryDirectory
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from unittest.mock import patch
 
 from netlas_asset_cli.cli import _write_output, build_parser, main, valid_target
@@ -47,6 +47,25 @@ class CliTests(unittest.TestCase):
             with patch("pathlib.Path.replace", side_effect=OSError("replace failed")):
                 with self.assertRaisesRegex(OSError, "replace failed"):
                     _write_output("new", output_path)
+
+            self.assertEqual(output_path.read_text(encoding="utf-8"), "old")
+            self.assertEqual(list(Path(directory).iterdir()), [output_path])
+
+    def test_failed_write_cleans_up_partial_export(self):
+        with TemporaryDirectory() as directory:
+            output_path = Path(directory) / "results.json"
+            output_path.write_text("old", encoding="utf-8")
+
+            with NamedTemporaryFile(
+                mode="w", encoding="utf-8", dir=directory, delete=False
+            ) as stream:
+                stream.write("partial query results")
+                with patch(
+                    "netlas_asset_cli.cli.tempfile.NamedTemporaryFile",
+                    return_value=stream,
+                ), patch.object(stream, "write", side_effect=OSError("write failed")):
+                    with self.assertRaisesRegex(OSError, "write failed"):
+                        _write_output("new", output_path)
 
             self.assertEqual(output_path.read_text(encoding="utf-8"), "old")
             self.assertEqual(list(Path(directory).iterdir()), [output_path])

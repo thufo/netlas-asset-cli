@@ -4,6 +4,8 @@ All notable changes to this project are documented in this file.
 
 ## Unreleased
 
+- Remove partial temporary exports when writing fails, while preserving any
+  existing destination file.
 - Pin GitHub Actions dependencies to immutable revisions and stop CI jobs that
   exceed 15 minutes.
 - Cancel superseded CI runs for the same branch or pull request.

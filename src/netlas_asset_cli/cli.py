@@ -140,8 +140,8 @@ def _write_output(text: str, path: Path | None) -> None:
             suffix=".tmp",
             delete=False,
         ) as stream:
-            stream.write(text)
             temporary_path = Path(stream.name)
+            stream.write(text)
         temporary_path.replace(path)
     except Exception:
         if temporary_path is not None:
