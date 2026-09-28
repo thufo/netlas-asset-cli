@@ -537,6 +537,31 @@ class NetlasClientTests(unittest.TestCase):
 
         self.assertEqual(sleeps, [10.0])
 
+    def test_bounds_retry_after_waits(self):
+        now = datetime(2026, 9, 3, 1, 29, 50, tzinfo=timezone.utc).timestamp()
+        cases = (
+            ("3600", 60.0),
+            ("Thu, 03 Sep 2026 03:30:00 GMT", 60.0),
+            ("Thu, 03 Sep 2026 01:00:00 GMT", 0.0),
+        )
+        for retry_after, expected_delay in cases:
+            with self.subTest(retry_after=retry_after):
+                opener = RecordingOpener(
+                    [
+                        http_error(429, retry_after=retry_after),
+                        {"type": "domain", "domain": "example.com"},
+                    ]
+                )
+                sleeps = []
+                client = NetlasClient(
+                    "secret", opener=opener, sleeper=sleeps.append, clock=lambda: now
+                )
+
+                client.host_summary("example.com")
+
+                self.assertEqual(sleeps, [expected_delay])
+                self.assertEqual(len(opener.requests), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
